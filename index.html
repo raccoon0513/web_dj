@@ -2,200 +2,31 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Personal Vinyl Player</title>
-    <style>
-        :root {
-            --wood-color: #5d4037;
-            --vinyl-color: #121212;
-            --accent-color: #ff5722;
-        }
-
-        body {
-            background-color: #2c2c2c;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Pretendard', sans-serif;
-            color: white;
-        }
-
-        .player-container {
-            position: relative;
-            width: 800px;
-            height: 500px;
-            background-color: var(--wood-color);
-            border-radius: 20px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-            display: flex;
-            padding: 20px;
-        }
-
-        /* 턴테이블 및 LP판 */
-        .turntable {
-            position: relative;
-            flex: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #3e2723;
-            border-radius: 10px;
-        }
-
-        .vinyl {
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, #333 2%, var(--vinyl-color) 40%, #000 100%);
-            border-radius: 50%;
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            cursor: pointer;
-            transition: transform 0.1s linear;
-        }
-
-        .vinyl::before {
-            content: "";
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120px; height: 120px;
-            background-color: #fff; /* 앨범 아트워크 영역 */
-            border-radius: 50%;
-            background-size: cover;
-        }
-
-        .spinning {
-            animation: rotateVinyl 1.8s linear infinite;
-        }
-
-        @keyframes rotateVinyl {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* 톤암(바늘) */
-        .tonearm {
-            position: absolute;
-            top: 50px; right: 80px;
-            width: 20px; height: 250px;
-            background: #999;
-            transform-origin: top center;
-            transform: rotate(-30deg);
-            transition: transform 0.5s ease-in-out;
-            cursor: grab;
-        }
-
-        /* 라이브러리 목록 */
-        .library {
-            flex: 1;
-            padding-left: 20px;
-            border-left: 2px solid rgba(255,255,255,0.1);
-            overflow-y: auto;
-        }
-
-        .drop-zone {
-            border: 2px dashed #8d6e63;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            transition: 0.3s;
-        }
-
-        .drop-zone.dragover { background: rgba(255,87,34,0.2); }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Vinyl Player</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="player-container">
+        <div class="turntable">
+            <div id="vinyl" class="vinyl">
+                <div class="vinyl-label"></div>
+            </div>
+            <div id="tonearm" class="tonearm">
+                <div class="arm-base"></div>
+                <div class="needle"></div>
+            </div>
+        </div>
 
-<div class="player-container">
-    <div class="turntable">
-        <div id="vinyl" class="vinyl"></div>
-        <div id="tonearm" class="tonearm"></div>
+        <div class="library">
+            <h2>Vinyl Collection</h2>
+            <button id="btnOpenDir" class="primary-btn">📁 폴더 연결하기</button>
+            <div id="dropZone" class="drop-zone">새 음악 드래그하여 추가</div>
+            <div id="playlist" class="playlist">
+                </div>
+        </div>
     </div>
 
-    <div class="library">
-        <h3>My Vinyls</h3>
-        <div id="dropZone" class="drop-zone">Drag & Drop Music Here</div>
-        <button id="btnOpenDir">Open Folder</button>
-        <ul id="playlist"></ul>
-    </div>
-</div>
-
-<script>
-    let audioCtx;
-    let sourceNode;
-    let directoryHandle;
-    const vinyl = document.getElementById('vinyl');
-    const tonearm = document.getElementById('tonearm');
-    const dropZone = document.getElementById('dropZone');
-
-    // 1. 오디오 컨텍스트 초기화
-    function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-    }
-
-    // 2. 파일 로드 및 재생 (Web Audio API)
-    async function playMusic(file) {
-        initAudio();
-        const arrayBuffer = await file.arrayBuffer();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-        if (sourceNode) sourceNode.stop();
-
-        sourceNode = audioCtx.createBufferSource();
-        sourceNode.buffer = audioBuffer;
-        sourceNode.connect(audioCtx.destination);
-        
-        // LP 시작 감성: 바늘 이동 후 재생
-        tonearm.style.transform = "rotate(0deg)";
-        setTimeout(() => {
-            sourceNode.start(0);
-            vinyl.classList.add('spinning');
-        }, 500);
-    }
-
-    // 3. 로컬 폴더 열기 (File System Access API)
-    document.getElementById('btnOpenDir').addEventListener('click', async () => {
-        directoryHandle = await window.showDirectoryPicker();
-        for await (const entry of directoryHandle.values()) {
-            if (entry.kind === 'file') {
-                renderTrack(entry);
-            }
-        }
-    });
-
-    function renderTrack(entry) {
-        const li = document.createElement('li');
-        li.textContent = entry.name;
-        li.style.cursor = "pointer";
-        li.onclick = async () => {
-            const file = await entry.getFile();
-            playMusic(file);
-        };
-        document.getElementById('playlist').appendChild(li);
-    }
-
-    // 4. 드래그 앤 드롭 및 로컬 저장
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
-    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
-    dropZone.ondrop = async (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        
-        const files = Array.from(e.dataTransfer.files);
-        for (const file of files) {
-            if (directoryHandle) {
-                // 선택된 폴더에 실제 파일 저장
-                const newFileHandle = await directoryHandle.getFileHandle(file.name, { create: true });
-                const writable = await newFileHandle.createWritable();
-                await writable.write(file);
-                await writable.close();
-                renderTrack(newFileHandle);
-            }
-        }
-    };
-</script>
+    <script src="script.js"></script>
 </body>
 </html>

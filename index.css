@@ -1,0 +1,127 @@
+:root {
+    --wood-color: #4e342e;
+    --vinyl-dark: #111;
+    --accent: #ff5722;
+    --text: #eceff1;
+}
+
+body {
+    background-color: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+}
+
+.player-container {
+    display: flex;
+    width: 900px;
+    height: 550px;
+    background-color: var(--wood-color);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+}
+
+/* 턴테이블 디자인 */
+.turntable {
+    position: relative;
+    flex: 1.5;
+    background: #2b1d1a;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+}
+
+.vinyl {
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, #333 2%, var(--vinyl-dark) 30%, #000 100%);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.vinyl-label {
+    width: 130px;
+    height: 130px;
+    background: #fff;
+    border-radius: 50%;
+    background-image: url('https://via.placeholder.com/150?text=No+Disc');
+    background-size: cover;
+}
+
+.spinning {
+    animation: rotateVinyl 1.8s linear infinite;
+}
+
+@keyframes rotateVinyl {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 톤암 디자인 */
+.tonearm {
+    position: absolute;
+    top: 50px;
+    right: 70px;
+    width: 15px;
+    height: 280px;
+    background: #bdc3c7;
+    transform-origin: top center;
+    transform: rotate(-35deg);
+    transition: transform 1s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    border-radius: 10px;
+}
+
+/* 라이브러리 목록 */
+.library {
+    flex: 1;
+    padding: 0 0 0 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist {
+    margin-top: 20px;
+    flex-grow: 1;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+}
+
+.track-item {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.track-item:hover {
+    background: rgba(255,87,34,0.15);
+}
+
+.drop-zone {
+    margin-top: 15px;
+    border: 2px dashed rgba(255,255,255,0.2);
+    padding: 20px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.primary-btn {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
