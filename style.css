@@ -42,8 +42,9 @@ body {
 .vinyl {
     width: 380px;
     height: 380px;
-    /* background: radial-gradient(circle, #333 2%, var(--vinyl-dark) 30%, #000 100%); */
     background-image: url(lp.png);
+    background-position: center;
+    background-size: 100%;
     border-radius: 50%;
     position: relative;
     display: flex;
@@ -51,14 +52,6 @@ body {
     align-items: center;
 }
 
-.vinyl-label {
-    width: 130px;
-    height: 130px;
-    background: #fff;
-    border-radius: 50%;
-    background-image: url('https://via.placeholder.com/150?text=No+Disc');
-    background-size: cover;
-}
 
 .spinning {
     animation: rotateVinyl 1.8s linear infinite;
