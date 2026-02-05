@@ -17,11 +17,13 @@
         </div>
 
         <div class="library">
-            <h2>Vinyl Collection</h2>
-            <button id="btnOpenDir" class="primary-btn">📁 폴더 연결하기</button>
-            <div id="dropZone" class="drop-zone">새 음악 드래그하여 추가</div>
-            <div id="playlist" class="playlist">
-                </div>
+            <h2>Vinyl Session</h2>
+            <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+            <button id="uploadBtn" class="primary-btn">🎵 노래 업로드하기</button>
+            <div id="dropZone" class="drop-zone">또는 파일을 여기에 드래그</div>
+            <div id="currentTrack" class="playlist" style="padding: 20px; text-align: center;">
+                현재 준비된 곡이 없습니다.
+            </div>
         </div>
     </div>
 
