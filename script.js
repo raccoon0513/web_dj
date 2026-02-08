@@ -1,8 +1,6 @@
-// script.js
-let audioCtx;
-let sourceNode;
-let audioBuffer; // 오디오 데이터를 담을 버퍼
+let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
+let startTime = 0; // 현재 재생 위치 추적을 위함
 
 const vinyl = document.getElementById('vinyl');
 const tonearm = document.getElementById('tonearm');
@@ -10,20 +8,27 @@ const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
 
 // 오디오 엔진 초기화
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-// 파일 처리 및 재생 로직
 async function handleFile(file) {
     if (!file || !file.type.startsWith('audio/')) return;
 
     initAudio();
     const arrayBuffer = await file.arrayBuffer();
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer); // 데이터 디코딩
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // 역재생용 버퍼 생성: 원본 데이터를 복사하여 뒤집음
+    reversedBuffer = audioCtx.createBuffer(
+        audioBuffer.numberOfChannels,
+        audioBuffer.length,
+        audioBuffer.sampleRate
+    );
+
+    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+        const chanData = audioBuffer.getChannelData(i);
+        const revChanData = reversedBuffer.getChannelData(i);
+        for (let j = 0; j < audioBuffer.length; j++) {
+            revChanData[j] = chanData[audioBuffer.length - 1 - j];
+        }
+    }
 
     playBuffer();
 }
@@ -32,13 +37,17 @@ function playBuffer() {
     if (sourceNode) sourceNode.stop();
 
     sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
+    
+    const currentSpeed = parseFloat(speedSlider.value);
+    
+    // 슬라이더가 음수면 역재생 버퍼를, 양수면 일반 버퍼를 선택
+    sourceNode.buffer = currentSpeed < 0 ? reversedBuffer : audioBuffer;
+    
+    // 배속은 항상 양수값으로 적용 (버퍼 자체를 뒤집었으므로)
+    sourceNode.playbackRate.value = Math.abs(currentSpeed);
+
     sourceNode.connect(audioCtx.destination);
     
-    // 슬라이더의 현재 값 적용 (역재생 포함)
-    const currentSpeed = parseFloat(speedSlider.value);
-    sourceNode.playbackRate.value = currentSpeed;
-
     tonearm.style.transform = "rotate(12deg)";
     
     setTimeout(() => {
@@ -47,9 +56,7 @@ function playBuffer() {
         isPlaying = true;
     }, 1000);
 
-    sourceNode.onended = () => {
-        if (isPlaying) stopPlayback();
-    };
+    sourceNode.onended = () => { if (isPlaying) stopPlayback(); };
 }
 
 // 실시간 속도 조절 이벤트
@@ -57,9 +64,17 @@ speedSlider.oninput = (e) => {
     const val = parseFloat(e.target.value);
     speedValue.textContent = val.toFixed(1);
     
-    if (sourceNode && isPlaying) {
-        // Web Audio API는 playbackRate에 음수값을 허용하여 역재생을 지원합니다
-        sourceNode.playbackRate.value = val;
+    if (isPlaying && audioBuffer) {
+        // 재생 중에 방향이 바뀌면 새로 재생해야 함 (버퍼 교체)
+        // 단순 배속 변경만 일어날 때는 playbackRate만 수정
+        const isReversing = val < 0;
+        const currentlyReversed = sourceNode.buffer === reversedBuffer;
+
+        if (isReversing !== currentlyReversed) {
+            playBuffer(); // 방향 전환 시 재시작
+        } else {
+            sourceNode.playbackRate.value = Math.abs(val);
+        }
     }
 };
 
@@ -69,4 +84,38 @@ function stopPlayback() {
     tonearm.style.transform = "rotate(-35deg)";
 }
 
-// ... (기존 업로드 관련 이벤트 리스너는 유지)
+
+
+
+// 1. 노래 업로드 버튼 클릭 시 파일 선택창 열기
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
+
+uploadBtn.onclick = () => fileInput.click();
+
+// 2. 파일 선택창에서 파일이 선택되었을 때 처리
+fileInput.onchange = (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+};
+
+// 3. 드래그 앤 드롭 영역 설정
+const dropZone = document.getElementById('dropZone');
+
+dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = "#ff5722";
+};
+
+dropZone.ondragleave = () => {
+    dropZone.style.borderColor = "rgba(255,255,255,0.2)";
+};
+
+dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = "rgba(255,255,255,0.2)";
+    if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+    }
+};
