@@ -84,8 +84,12 @@ function stopPlayback() {
     tonearm.style.transform = "rotate(-35deg)";
 }
 
-
-
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
 
 // 1. 노래 업로드 버튼 클릭 시 파일 선택창 열기
 const uploadBtn = document.getElementById('uploadBtn');
@@ -119,3 +123,4 @@ dropZone.ondrop = (e) => {
         handleFile(e.dataTransfer.files[0]);
     }
 };
+
