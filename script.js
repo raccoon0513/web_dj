@@ -1,8 +1,15 @@
 let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
 let currentPosition = 0; // 현재 곡의 위치 (초)
+let currentAcceleration = 0; //현재 가속도
 let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
 let currentAngle =0;
+
+// 드래그 조작을 위한 변수 추가
+let isDragging = false;
+let lastY = 0;
+let dragVelocity = 0; // 드래그 속도 축적
+
 
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
@@ -61,31 +68,27 @@ function playBuffer() {
     updateUI(); // 진행 바 업데이트 시작
 }
 
-// updateUI 함수 수정
 function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
-    const speed = parseFloat(speedSlider.value);
-    const now = audioCtx.currentTime;
-    const deltaTime = now - lastUpdateTime;
-    
-    // 1. 오디오 위치 업데이트
-    currentPosition += deltaTime * speed;
-    
-    // 2. LP판 각도 업데이트 (틱 시스템)
-    // 레코드판 평균 rpm : 45rpm
-    const rotationPerSecond = 360 / 1.8;
-    currentAngle += rotationPerSecond * speed * deltaTime;
-    
-    // 3. 시각적 반영
-    vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
-    
+    // 드래그 중일 때는 드래그 속도를 반영하여 판을 돌림
+    let baseSpeed = parseFloat(speedSlider.value);
+    let effectiveSpeed = isDragging ? baseSpeed + dragVelocity : baseSpeed;
+
+    let now = audioCtx.currentTime;
+    let deltaTime = now - lastUpdateTime;
     lastUpdateTime = now;
 
-    // 진행 바 등 기존 UI 업데이트
-    const progress = (currentPosition / audioBuffer.duration) * 100;
-    progressSlider.value = Math.min(Math.max(0, progress), 100);
-    currentTimeText.textContent = formatTime(Math.max(0, currentPosition));
+    // 드래그 중에는 오디오 위치도 드래그 속도에 맞춰 변화
+    currentPosition += deltaTime * effectiveSpeed;
+    
+    // LP판 각도 업데이트 (동기화)
+    const rotationPerSecond = 360 / 1.8;
+    currentAngle += rotationPerSecond * effectiveSpeed * deltaTime;
+    
+    vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
+    
+    // ... 기존 UI 업데이트 로직 (progressSlider 등) 동일
 
     if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
         stopPlayback();
@@ -130,6 +133,46 @@ function initAudio() {
     }
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
+
+// 1. LP판 클릭/드래그 이벤트 설정
+vinyl.onmousedown = (e) => {
+    if (!isPlaying) return;
+    isDragging = true;
+    lastY = e.clientY;
+    vinyl.style.cursor = 'grabbing';
+};
+
+window.onmousemove = (e) => {
+    if (!isDragging || !isPlaying) return;
+
+    // 드래그 방향 및 거리 계산 (Y축 기준)
+    let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
+    lastY = e.clientY;
+
+    // 드래그 속도를 실제 재생 속도에 반영 (감도 조절: 0.05)
+    dragVelocity = deltaY * 0.05;
+    
+    // 현재 슬라이더 값에 드래그 속도를 더함
+    let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
+    
+    // 오디오 노드에 즉시 속도 반영
+    if (sourceNode) {
+        // 일시적으로 아주 빠른 스크래치 소리를 위해 절대값 적용
+        sourceNode.playbackRate.value = Math.abs(targetSpeed); 
+    }
+};
+
+window.onmouseup = () => {
+    if (isDragging) {
+        isDragging = false;
+        vinyl.style.cursor = 'pointer';
+        
+        // 마우스를 떼면 다시 슬라이더의 설정 속도로 부드럽게 복귀
+        if (sourceNode && isPlaying) {
+            sourceNode.playbackRate.value = Math.abs(parseFloat(speedSlider.value));
+        }
+    }
+};
 
 // 1. 노래 업로드 버튼 클릭 시 파일 선택창 열기
 const uploadBtn = document.getElementById('uploadBtn');
