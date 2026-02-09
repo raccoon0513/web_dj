@@ -74,7 +74,7 @@ function updateUI() {
     
     // 2. LP판 각도 업데이트 (틱 시스템)
     // 레코드판 평균 rpm : 45rpm
-    const rotationPerSecond = 45 / 60;
+    const rotationPerSecond = 360 / 1.8;
     currentAngle += rotationPerSecond * speed * deltaTime;
     
     // 3. 시각적 반영
