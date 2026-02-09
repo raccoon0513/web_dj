@@ -1,14 +1,17 @@
 let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
 let currentPosition = 0; // 현재 곡의 위치 (초)
-let currentAcceleration = 0; //현재 가속도
+let currentAcceleration = 0; //현재 가속도 // TODO : 안쓴다?삭제
 let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
 let currentAngle =0;
 
 // 드래그 조작을 위한 변수 추가
 let isDragging = false;
 let lastY = 0;
+let lastX = 0;
+let lastAngle = 0;
 let dragVelocity = 0; // 드래그 속도 축적
+
 
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
@@ -16,6 +19,10 @@ const speedValue = document.getElementById('speedValue');
 const progressSlider = document.getElementById('progressSlider');
 const currentTimeText = document.getElementById('currentTime');
 const durationText = document.getElementById('duration');
+
+// TODO : 테스트용 angle display 출력기임. 후에 html 내 div태그랑 같이 삭제할 것
+//angle_display_tester자체를 날릴 것
+const angle_display= document.getElementsById('angle_display')
 
 //레코드판 중심 위치 가져오기
 const rect = vinyl.getBoundingClientRect();
@@ -159,7 +166,9 @@ window.onmousemove = (e) => {
 
     // 드래그 방향 및 거리 계산 (Y축 기준)
     let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
+    let deltaX = lastX - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
     lastY = e.clientY;
+    lastX = e.clientX;
 
     // 드래그 속도를 실제 재생 속도에 반영 (감도 조절: 0.05)
     dragVelocity = deltaY * 0.05;
