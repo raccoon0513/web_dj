@@ -1,10 +1,14 @@
 let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
-let startTime = 0; // 현재 재생 위치 추적을 위함
+let currentPosition = 0; // 현재 곡의 위치 (초)
+let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
 
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
+const progressSlider = document.getElementById('progressSlider');
+const currentTimeText = document.getElementById('currentTime');
+const durationText = document.getElementById('duration');
 
 // 오디오 엔진 초기화
 async function handleFile(file) {
@@ -35,48 +39,79 @@ async function handleFile(file) {
 function playBuffer() {
     if (sourceNode) sourceNode.stop();
 
+    initAudio();
     sourceNode = audioCtx.createBufferSource();
-    
-    const currentSpeed = parseFloat(speedSlider.value);
-    
-    // 슬라이더가 음수면 역재생 버퍼를, 양수면 일반 버퍼를 선택
-    sourceNode.buffer = currentSpeed < 0 ? reversedBuffer : audioBuffer;
-    
-    // 배속은 항상 양수값으로 적용 (버퍼 자체를 뒤집었으므로)
-    sourceNode.playbackRate.value = Math.abs(currentSpeed);
+    const speed = parseFloat(speedSlider.value);
+    const isReversed = speed < 0;
 
+    // 현재 위치를 기준으로 어떤 버퍼의 어느 지점에서 시작할지 결정
+    sourceNode.buffer = isReversed ? reversedBuffer : audioBuffer;
+    sourceNode.playbackRate.value = Math.abs(speed);
     sourceNode.connect(audioCtx.destination);
-    
-    setTimeout(() => {
-        sourceNode.start(0);
-        vinyl.classList.add('spinning');
-        isPlaying = true;
-    }, 1000);
 
-    sourceNode.onended = () => { if (isPlaying) stopPlayback(); };
+    // 역재생 버퍼는 데이터가 뒤집혀 있으므로 시작 지점도 뒤집어서 계산
+    const startOffset = isReversed ? (audioBuffer.duration - currentPosition) : currentPosition;
+
+    sourceNode.start(0, Math.max(0, startOffset));
+    lastUpdateTime = audioCtx.currentTime;
+    isPlaying = true;
+    vinyl.classList.add('spinning');
+    
+    updateUI(); // 진행 바 업데이트 시작
 }
 
-// 실시간 속도 조절 이벤트
+function updateUI() {
+    if (!isPlaying || !audioBuffer) return;
+
+    const speed = parseFloat(speedSlider.value);
+    const now = audioCtx.currentTime;
+    const deltaTime = now - lastUpdateTime;
+    
+    // 현재 위치 실시간 갱신 (경과 시간 * 배속 * 방향)
+    currentPosition += deltaTime * speed;
+    lastUpdateTime = now;
+
+    // 진행 바 값 및 텍스트 업데이트
+    const progress = (currentPosition / audioBuffer.duration) * 100;
+    progressSlider.value = Math.min(Math.max(0, progress), 100);
+    currentTimeText.textContent = formatTime(Math.max(0, currentPosition));
+    durationText.textContent = formatTime(audioBuffer.duration);
+
+    // 곡이 끝났을 때 처리
+    if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
+        stopPlayback();
+    } else {
+        requestAnimationFrame(updateUI);
+    }
+}
+// 속도 조절 시 현재 위치를 유지하며 즉시 재재생
 speedSlider.oninput = (e) => {
     const val = parseFloat(e.target.value);
     speedValue.textContent = val.toFixed(1);
-    
-    if (isPlaying && audioBuffer) {
-        // 재생 중에 방향이 바뀌면 새로 재생해야 함 (버퍼 교체)
-        // 단순 배속 변경만 일어날 때는 playbackRate만 수정
-        const isReversing = val < 0;
-        const currentlyReversed = sourceNode.buffer === reversedBuffer;
+    vinyl.style.animationDirection = val < 0 ? 'reverse' : 'normal';
 
+    if (isPlaying && audioBuffer) {
+        const isReversing = val < 0;
+        const currentlyReversed = (sourceNode.buffer === reversedBuffer);
+
+        // 방향이 바뀌는 임계점(0)에서 버퍼를 교체해야 함
         if (isReversing !== currentlyReversed) {
-            playBuffer(); // 방향 전환 시 재시작
+            playBuffer(); 
         } else {
             sourceNode.playbackRate.value = Math.abs(val);
         }
     }
 };
 
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 function stopPlayback() {
     isPlaying = false;
+    currentPosition = 0; // 초기화
     vinyl.classList.remove('spinning');
 }
 
@@ -93,14 +128,12 @@ const fileInput = document.getElementById('fileInput');
 
 uploadBtn.onclick = () => fileInput.click();
 
-// 2. 파일 선택창에서 파일이 선택되었을 때 처리
 fileInput.onchange = (e) => {
     if (e.target.files.length > 0) {
         handleFile(e.target.files[0]);
     }
 };
 
-// 3. 드래그 앤 드롭 영역 설정
 const dropZone = document.getElementById('dropZone');
 
 dropZone.ondragover = (e) => {

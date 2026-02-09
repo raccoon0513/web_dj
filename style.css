@@ -27,10 +27,11 @@ body {
 }
 
 /* 턴테이블 디자인 */
+/* style.css */
 .turntable {
     position: relative;
-    width: 550;
-    height: 550;
+    width: 550px;  /* px 단위 추가 */
+    height: 550px; /* px 단위 추가 */
     flex: 1.5;
     background-image: url(./turntable_without_tonearm.png);
     background-position: center;
@@ -53,7 +54,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-
+    will-change: transform; /* 성능 최적화를 위해 추가 */
 }
 
 

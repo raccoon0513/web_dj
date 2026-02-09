@@ -21,21 +21,30 @@
             <input type="file" id="fileInput" accept="audio/*" style="display: none;">
             <button id="uploadBtn" class="primary-btn">🎵 노래 업로드하기</button>
             <div id="dropZone" class="drop-zone">또는 파일을 여기에 드래그</div>
+
+            <div class="progress-container" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+                <input type="range" id="progressSlider" min="0" max="100" value="0" style="width: 100%; accent-color: var(--accent);">
+            </div>
+
+            <div class="control-group" style="margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                <label for="speedSlider">Playback Speed: <span id="speedValue">1.0</span>x</label>
+                <input type="range" id="speedSlider" min="-2" max="2" step="0.1" value="1" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 5px;">
+                    <span>-2x (Reverse)</span>
+                    <span>0</span>
+                    <span>2x</span>
+                </div>
+            </div>
+
             <div id="currentTrack" class="playlist" style="padding: 20px; text-align: center;">
                 현재 준비된 곡이 없습니다.
             </div>
         </div>
         
-    </div>
-
-    <div class="control-group" style="margin-top: 20px;">
-        <label for="speedSlider">Playback Speed: <span id="speedValue">1.0</span>x</label>
-        <input type="range" id="speedSlider" min="-2" max="2" step="0.1" value="1" style="width: 100%;">
-        <div style="display: flex; justify-content: space-between; font-size: 12px;">
-            <span>-2x (Reverse)</span>
-            <span>0</span>
-            <span>2x</span>
-        </div>
     </div>
 
     
