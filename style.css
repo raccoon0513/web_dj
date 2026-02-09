@@ -58,15 +58,6 @@ body {
 }
 
 
-.spinning {
-    animation: rotateVinyl 1.8s linear infinite;
-}
-
-@keyframes rotateVinyl {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
 /* 라이브러리 목록 */
 .library {
     flex: 1;

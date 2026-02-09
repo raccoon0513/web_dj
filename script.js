@@ -2,6 +2,7 @@ let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
 let currentPosition = 0; // 현재 곡의 위치 (초)
 let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
+let currentAngle =0;
 
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
@@ -60,6 +61,7 @@ function playBuffer() {
     updateUI(); // 진행 바 업데이트 시작
 }
 
+// updateUI 함수 수정
 function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
@@ -67,17 +69,24 @@ function updateUI() {
     const now = audioCtx.currentTime;
     const deltaTime = now - lastUpdateTime;
     
-    // 현재 위치 실시간 갱신 (경과 시간 * 배속 * 방향)
+    // 1. 오디오 위치 업데이트
     currentPosition += deltaTime * speed;
+    
+    // 2. LP판 각도 업데이트 (틱 시스템)
+    // 1.8초당 1회전(360도) 기준 시 초당 200도 회전
+    const rotationPerSecond = 360 / 1.8;
+    currentAngle += rotationPerSecond * speed * deltaTime;
+    
+    // 3. 시각적 반영
+    vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
+    
     lastUpdateTime = now;
 
-    // 진행 바 값 및 텍스트 업데이트
+    // 진행 바 등 기존 UI 업데이트
     const progress = (currentPosition / audioBuffer.duration) * 100;
     progressSlider.value = Math.min(Math.max(0, progress), 100);
     currentTimeText.textContent = formatTime(Math.max(0, currentPosition));
-    durationText.textContent = formatTime(audioBuffer.duration);
 
-    // 곡이 끝났을 때 처리
     if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
         stopPlayback();
     } else {
