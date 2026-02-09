@@ -73,8 +73,8 @@ function updateUI() {
     currentPosition += deltaTime * speed;
     
     // 2. LP판 각도 업데이트 (틱 시스템)
-    // 1.8초당 1회전(360도) 기준 시 초당 200도 회전
-    const rotationPerSecond = 360 / 1.8;
+    // 레코드판 평균 rpm : 45rpm
+    const rotationPerSecond = 45 / 60;
     currentAngle += rotationPerSecond * speed * deltaTime;
     
     // 3. 시각적 반영
@@ -151,7 +151,7 @@ dropZone.ondragover = (e) => {
 };
 
 dropZone.ondragleave = () => {
-    dropZone.style.borderColor = "rgba(255,255,255,0.2)";
+    dropZone.style.borderColor = "rgba(255,255,255,0.2)";   
 };
 
 dropZone.ondrop = (e) => {
