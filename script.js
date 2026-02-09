@@ -3,7 +3,6 @@ let isPlaying = false;
 let startTime = 0; // 현재 재생 위치 추적을 위함
 
 const vinyl = document.getElementById('vinyl');
-const tonearm = document.getElementById('tonearm');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
 
@@ -48,8 +47,6 @@ function playBuffer() {
 
     sourceNode.connect(audioCtx.destination);
     
-    tonearm.style.transform = "rotate(12deg)";
-    
     setTimeout(() => {
         sourceNode.start(0);
         vinyl.classList.add('spinning');
@@ -81,7 +78,6 @@ speedSlider.oninput = (e) => {
 function stopPlayback() {
     isPlaying = false;
     vinyl.classList.remove('spinning');
-    tonearm.style.transform = "rotate(-35deg)";
 }
 
 function initAudio() {
