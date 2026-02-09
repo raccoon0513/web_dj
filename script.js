@@ -10,13 +10,21 @@ let isDragging = false;
 let lastY = 0;
 let dragVelocity = 0; // 드래그 속도 축적
 
-
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
 const progressSlider = document.getElementById('progressSlider');
 const currentTimeText = document.getElementById('currentTime');
 const durationText = document.getElementById('duration');
+
+//레코드판 중심 위치 가져오기
+const rect = vinyl.getBoundingClientRect();
+// 중심 X 좌표 = 요소의 왼쪽 시작점 + (너비 / 2)
+const centerX = rect.left + rect.width / 2;
+
+// 중심 Y 좌표 = 요소의 위쪽 시작점 + (높이 / 2)
+const centerY = rect.top + rect.height / 2;
+
 
 // 오디오 엔진 초기화
 async function handleFile(file) {
@@ -99,7 +107,10 @@ function updateUI() {
 // 속도 조절 시 현재 위치를 유지하며 즉시 재재생
 speedSlider.oninput = (e) => {
     const val = parseFloat(e.target.value);
-    speedValue.textContent = val.toFixed(1);
+
+    //인터페이스 속도 표시창 값 변경
+    speedValue.textContent = val.toFixed(3);
+
     vinyl.style.animationDirection = val < 0 ? 'reverse' : 'normal';
 
     if (isPlaying && audioBuffer) {
@@ -139,6 +150,7 @@ vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
     isDragging = true;
     lastY = e.clientY;
+    lastX = e.clientX;
     vinyl.style.cursor = 'grabbing';
 };
 
@@ -158,6 +170,7 @@ window.onmousemove = (e) => {
     // 오디오 노드에 즉시 속도 반영
     if (sourceNode) {
         // 일시적으로 아주 빠른 스크래치 소리를 위해 절대값 적용
+        speedValue.textContent = targetSpeed.toFixed(3);
         sourceNode.playbackRate.value = Math.abs(targetSpeed); 
     }
 };
