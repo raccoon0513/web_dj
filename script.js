@@ -22,7 +22,7 @@ const durationText = document.getElementById('duration');
 
 // TODO : 테스트용 angle display 출력기임. 후에 html 내 div태그랑 같이 삭제할 것
 //angle_display_tester자체를 날릴 것
-const angle_display= document.getElementsById('angle_display')
+const angle_display= document.getElementById('angle_display')
 
 //레코드판 중심 위치 가져오기
 const rect = vinyl.getBoundingClientRect();
@@ -34,7 +34,7 @@ const centerY = rect.top + rect.height / 2;
 
 
 // 오디오 엔진 초기화
-async function handleFile(file) {
+async function handleFile(file) { //file input 관련 함수
     if (!file || !file.type.startsWith('audio/')) return;
 
     initAudio();
@@ -59,7 +59,7 @@ async function handleFile(file) {
     playBuffer();
 }
 
-function playBuffer() {
+function playBuffer() { //재생관련함수
     if (sourceNode) sourceNode.stop();
 
     initAudio();
@@ -83,7 +83,7 @@ function playBuffer() {
     updateUI(); // 진행 바 업데이트 시작
 }
 
-function updateUI() {
+function updateUI() { //ui 갱신 관련 함수
     if (!isPlaying || !audioBuffer) return;
 
     // 드래그 중일 때는 드래그 속도를 반영하여 판을 돌림
@@ -111,7 +111,7 @@ function updateUI() {
         requestAnimationFrame(updateUI);
     }
 }
-// 속도 조절 시 현재 위치를 유지하며 즉시 재재생
+// 속도 조절 시 현재 위치를 유지하며 즉시 재 재생
 speedSlider.oninput = (e) => {
     const val = parseFloat(e.target.value);
 
@@ -133,19 +133,13 @@ speedSlider.oninput = (e) => {
     }
 };
 
-function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
 function stopPlayback() {
     isPlaying = false;
     currentPosition = 0; // 초기화
     vinyl.classList.remove('spinning');
 }
 
-function initAudio() {
+function initAudio() { // 오디오 버퍼 초기화
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
