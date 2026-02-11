@@ -152,6 +152,9 @@ function initAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+// TODO : 이벤트 리스너 및 기타 함수 찾아서 angle_display 값 변경하는 코드 짜기
+// get/set으로 설정할까?
+
 // 1. LP판 클릭/드래그 이벤트 설정
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
