@@ -149,6 +149,22 @@ function initAudio() { // 오디오 버퍼 초기화
 // TODO : 이벤트 리스너 및 기타 함수 찾아서 angle_display 값 변경하는 코드 짜기
 // get/set으로 설정할까?
 
+function set_angle_display(value){
+    angle_display.textContent = value;
+    return
+}
+function get_angle_display(value){
+    return angle_display.textContent;
+}
+
+function calculate_angle(
+    // 좌표를 기준으로 현재 각도를 계산?
+    x, y, 
+    centerX = centerX, 
+    centerY = centerY){
+    return Math.atan2(y=(y-centerY), x=(x-centerX))
+}
+
 // 1. LP판 클릭/드래그 이벤트 설정
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
@@ -156,6 +172,8 @@ vinyl.onmousedown = (e) => {
     lastY = e.clientY;
     lastX = e.clientX;
     vinyl.style.cursor = 'grabbing';
+
+    set_angle_display(calculate_angle(x=lastX, y=lastY))
 };
 
 window.onmousemove = (e) => {
@@ -163,9 +181,10 @@ window.onmousemove = (e) => {
 
     // 드래그 방향 및 거리 계산 (Y축 기준)
     let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
-    let deltaX = lastX - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
-    lastY = e.clientY;
+    let deltaX = lastX - e.clientX; // 위로 밀면 양수, 아래로 밀면 음수
     lastX = e.clientX;
+    lastY = e.clientY;
+    set_angle_display(calculate_angle(x=lastX, y=lastY))
 
     // 드래그 속도를 실제 재생 속도에 반영 (감도 조절: 0.05)
     dragVelocity = deltaY * 0.05;
