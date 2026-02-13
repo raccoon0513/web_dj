@@ -161,12 +161,17 @@ function calculate_angle(x, y){ // 좌표를 기준으로 현재 각도를 계�
     return Math.atan2(y=(y-centerY), x=(x-centerX)) * 180 / Math.PI
 }
 
+function set_tempo(){//곡 속도 컨트롤
+
+}
+
 // 1. LP판 클릭/드래그 이벤트 설정
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
     isDragging = true;
     lastY = e.clientY;
     lastX = e.clientX;
+    lastAngle = calculate_angle(x=lastX,y=lastY)
     vinyl.style.cursor = 'grabbing';
 
     set_angle_display(calculate_angle(x=lastX, y=lastY))
@@ -178,12 +183,23 @@ window.onmousemove = (e) => {
     // 드래그 방향 및 거리 계산 (Y축 기준)
     let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
     let deltaX = lastX - e.clientX; // 위로 밀면 양수, 아래로 밀면 음수
-    lastX = e.clientX;
-    lastY = e.clientY;
-    set_angle_display(calculate_angle(x=lastX, y=lastY))
+    let deltaAngle = lastAngle - calculate_angle(x=e.clientX, y=e.clientX)
 
+    // TODO : 버그발생... 마우스가 180도를 넘어가는 순간 의문의 값이 더해진다.
+    // if( deltaAngle > 180){
+    //     deltaAngle = deltaAngle- (180*2)
+    // }
+    // if(deltaAngle < -180){
+    //     deltaAngle = deltaAngle+ (180*2)
+    // }
+    
+    set_angle_display(lastAngle - calculate_angle(x=e.clientX, y=e.clientX))
+
+    lastX = e.clientX; 
+    lastY = e.clientY;
+    lastAngle = calculate_angle(x=lastX,y=lastY)
     // 드래그 속도를 실제 재생 속도에 반영 (감도 조절: 0.05)
-    dragVelocity = deltaY * 0.05;
+    dragVelocity = deltaAngle * 0.01;
     
     // 현재 슬라이더 값에 드래그 속도를 더함
     let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
