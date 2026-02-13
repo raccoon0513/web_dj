@@ -157,12 +157,8 @@ function get_angle_display(value){
     return angle_display.textContent;
 }
 
-function calculate_angle(
-    // 좌표를 기준으로 현재 각도를 계산?
-    x, y, 
-    centerX = centerX, 
-    centerY = centerY){
-    return Math.atan2(y=(y-centerY), x=(x-centerX))
+function calculate_angle(x, y){ // 좌표를 기준으로 현재 각도를 계산?
+    return Math.atan2(y=(y-centerY), x=(x-centerX)) * 180 / Math.PI
 }
 
 // 1. LP판 클릭/드래그 이벤트 설정
