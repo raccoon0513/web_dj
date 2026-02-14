@@ -1,14 +1,16 @@
-let audioCtx, sourceNode, audioBuffer, reversedBuffer;
+let audioCtx, sourceNode, audioBuffer, reversedBuffer, filterNode;
 let isPlaying = false;
 let currentPosition = 0; // 현재 곡의 위치 (초)
 let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
-let currentAngle =0;
+let currentAngle = 0;
 
 // 드래그 조작을 위한 변수 추가
 let isDragging = false;
 let lastAngle = 0;
 let dragVelocity = 0; // 드래그 속도 축적
 
+//정지시 컨트롤을 위한 변수
+let brakeVelocity = 0;
 
 //=======================
 // Config (fine-tunning)
@@ -16,8 +18,11 @@ let dragVelocity = 0; // 드래그 속도 축적
 const tempo_rate = 5.0;
 // LP 민감도
 const lp_sensitivity = 0.05;
+// 마우스 클릭시 감쇄도
+const brake_force = 0.85; // 0에 가까울수록 급정거
 // 마우스 뗐을 때 관성도 (기본값 0.95)
 const friction = 0.95; // 1에 가까울수록 오래 돌고, 작을수록 빨리 멈춥니다.
+
 //=======================
 
 const vinyl = document.getElementById('vinyl');
@@ -72,7 +77,7 @@ function playBuffer() { //재생관련함수
     // 현재 위치를 기준으로 어떤 버퍼의 어느 지점에서 시작할지 결정
     sourceNode.buffer = isReversed ? reversedBuffer : audioBuffer;
     sourceNode.playbackRate.value = Math.abs(speed);
-    sourceNode.connect(audioCtx.destination);
+    sourceNode.connect(filterNode);
 
     // 역재생 버퍼는 데이터가 뒤집혀 있으므로 시작 지점도 뒤집어서 계산
     const startOffset = isReversed ? (audioBuffer.duration - currentPosition) : currentPosition;
@@ -85,29 +90,37 @@ function playBuffer() { //재생관련함수
     updateUI(); // 진행 바 업데이트 시작
 }
 
-// script.js - updateUI 함수 수정
-
 function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
-    // 1. 속도 결정 로직 (관성 및 잡기 효과)
     let baseSpeed = parseFloat(speedSlider.value);
     let effectiveSpeed;
 
     if (isDragging) {
-        // LP판을 잡고 있는 동안에는 슬라이더 배속을 무시하고 드래그 속도만 반영 (0배속 효과)
-        effectiveSpeed = dragVelocity; 
-    } else {
-        // 손을 뗐을 때 dragVelocity가 friction(예: 0.95)에 의해 서서히 줄어듭니다.
-        if (Math.abs(dragVelocity) > 0.001) {
-            dragVelocity *= friction; 
+        // [수정] 잡은 직후에는 기존 속도에서 brake_force만큼 서서히 0으로 감쇄
+        if (Math.abs(brakeVelocity) > 0.001) {
+            brakeVelocity *= brake_force;
         } else {
-            dragVelocity = 0;
+            brakeVelocity = 0;
         }
-        // 기본 배속에 남은 관성 속도를 더합니다.
+        // 잡고 있는 동안은 브레이크 속도 + 드래그 속도만 반영
+        effectiveSpeed = brakeVelocity + dragVelocity;
+    } else {
+        // 손을 뗐을 때의 로직은 기존 관성 로직 유지
+        if (Math.abs(dragVelocity) > 0.001) dragVelocity *= friction;
+        else dragVelocity = 0;
+        
         effectiveSpeed = baseSpeed + dragVelocity;
     }
 
+    if (filterNode) {
+        // 배속(effectiveSpeed)이 높을수록 컷오프 주파수를 낮춰서 먹먹한 소리를 냄
+        // 예: 1배속일 때 20kHz, 5배속일 때 5kHz로 제한
+        let cutoff = Math.max(2000, 20000 - Math.abs(effectiveSpeed) * 3000);
+        filterNode.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.1);
+    }
+
+    
     // 2. 배속 제한 적용 (Config에 설정한 tempo_rate 활용)
     effectiveSpeed = Math.max(Math.min(effectiveSpeed, tempo_rate), -tempo_rate);
 
@@ -180,8 +193,11 @@ function stopPlayback() {
 function initAudio() { // 오디오 버퍼 초기화
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        filterNode = audioCtx.createBiquadFilter();
+        filterNode.type = 'lowpass';
+        filterNode.frequency.value = 20000; // 기본은 모든 소리 통과
+        filterNode.connect(audioCtx.destination);
     }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
 // TODO : 이벤트 리스너 및 기타 함수 찾아서 angle_display 값 변경하는 코드 짜기
@@ -208,6 +224,9 @@ function set_tempo(){//곡 속도 컨트롤
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
     isDragging = true;
+
+    // lp 정지시 관성을 가지고 속도 줄임
+    brakeVelocity = parseFloat(speedSlider.value) + dragVelocity;
 
     // 클릭하는 시점의 LP판 위치와 크기를 다시 계산합니다.
     const rect = vinyl.getBoundingClientRect();
