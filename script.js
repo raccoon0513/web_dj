@@ -120,7 +120,7 @@ function updateUI() {
         filterNode.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.1);
     }
 
-    
+
     // 2. 배속 제한 적용 (Config에 설정한 tempo_rate 활용)
     effectiveSpeed = Math.max(Math.min(effectiveSpeed, tempo_rate), -tempo_rate);
 
@@ -238,8 +238,6 @@ vinyl.onmousedown = (e) => {
     set_angle_display(lastAngle.toFixed(2));
 };
 
-
-// script.js
 window.onmousemove = (e) => {
     if (!isDragging || !isPlaying) return;
 
@@ -249,23 +247,13 @@ window.onmousemove = (e) => {
     if (deltaAngle > 180) deltaAngle -= 360;
     else if (deltaAngle < -180) deltaAngle += 360;
     
+    // 1. 드래그 속도 값만 갱신합니다.
     dragVelocity = deltaAngle * lp_sensitivity; 
     lastAngle = currentMouseAngle;
 
-    if (sourceNode) {
-        // 1. 기본 슬라이더 값에 드래그 속도를 합친 목표 배속 계산
-        let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
-
-        // TODO : 배속 상한. 후에 수치 수정
-        targetSpeed = Math.max(Math.min(targetSpeed, tempo_rate), -1 * tempo_rate);
-
-        // 3. 실제 오디오 엔진에 반영 (절대값 적용)
-        // 0.06배속 미만은 소리가 거의 들리지 않으므로 최소 재생 속도를 0.1 정도로 잡는 것도 좋습니다.
-        sourceNode.playbackRate.value = Math.abs(targetSpeed);
-        
-        // UI에도 제한된 배속을 표시
-        speedValue.textContent = targetSpeed.toFixed(3);
-    }
+    // 2. 디버깅용 각도 표시만 업데이트합니다.
+    set_angle_display(currentMouseAngle.toFixed(2));
+    
 };
 
 window.onmouseup = () => {
