@@ -1,17 +1,22 @@
 let audioCtx, sourceNode, audioBuffer, reversedBuffer;
 let isPlaying = false;
 let currentPosition = 0; // 현재 곡의 위치 (초)
-let currentAcceleration = 0; //현재 가속도 // TODO : 안쓴다?삭제
 let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
 let currentAngle =0;
 
 // 드래그 조작을 위한 변수 추가
 let isDragging = false;
-let lastY = 0;
-let lastX = 0;
 let lastAngle = 0;
 let dragVelocity = 0; // 드래그 속도 축적
 
+
+//=======================
+// Config (fine-tunning)
+// 곡의 배속
+const tempo_rate = 5.0;
+// LP 민감도
+const lp_sensitivity = 0.05;
+//=======================
 
 const vinyl = document.getElementById('vinyl');
 const speedSlider = document.getElementById('speedSlider');
@@ -170,12 +175,9 @@ function set_tempo(){//곡 속도 컨트롤
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
     isDragging = true;
-    lastY = e.clientY;
-    lastX = e.clientX;
-    lastAngle = calculate_angle(x=lastX,y=lastY)
+    lastAngle = calculate_angle(x=e.clientX,y=e.clientY)
     vinyl.style.cursor = 'grabbing';
-
-    set_angle_display(calculate_angle(x=lastX, y=lastY))
+    set_angle_display(lastAngle)
 };
 
 
@@ -189,17 +191,15 @@ window.onmousemove = (e) => {
     if (deltaAngle > 180) deltaAngle -= 360;
     else if (deltaAngle < -180) deltaAngle += 360;
     
-    dragVelocity = deltaAngle * 0.1; 
+    dragVelocity = deltaAngle * lp_sensitivity; 
     lastAngle = currentMouseAngle;
 
     if (sourceNode) {
         // 1. 기본 슬라이더 값에 드래그 속도를 합친 목표 배속 계산
         let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
 
-        // 2. 배속 상한/하한 제한 (예: -5.0x ~ 5.0x)
-        // Math.max(값, 최소값) -> 최소값보다 작아지지 않게 함
-        // Math.min(값, 최대값) -> 최대값보다 커지지 않게 함
-        targetSpeed = Math.max(Math.min(targetSpeed, 5.0), -5.0);
+        // TODO : 배속 상한. 후에 수치 수정
+        targetSpeed = Math.max(Math.min(targetSpeed, tempo_rate), -1 * tempo_rate);
 
         // 3. 실제 오디오 엔진에 반영 (절대값 적용)
         // 0.06배속 미만은 소리가 거의 들리지 않으므로 최소 재생 속도를 0.1 정도로 잡는 것도 좋습니다.
