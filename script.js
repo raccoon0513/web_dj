@@ -14,10 +14,10 @@ let brakeVelocity = 0;
 
 //=======================
 // Config (fine-tunning)
-// 곡의 배속
-const tempo_rate = 5.0;
+// 곡의 배속 한계(기본 5.0)
+const tempo_rate = 5;
 // LP 민감도
-const lp_sensitivity = 0.05;
+const lp_sensitivity = 0.3;
 // 마우스 클릭시 감쇄도
 const brake_force = 0.85; // 0에 가까울수록 급정거
 // 마우스 뗐을 때 관성도 (기본값 0.95)
