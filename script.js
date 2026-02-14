@@ -83,28 +83,43 @@ function playBuffer() { //재생관련함수
     updateUI(); // 진행 바 업데이트 시작
 }
 
-function updateUI() { //ui 갱신 관련 함수
+// script.js - updateUI 함수 수정
+
+function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
-    // 드래그 중일 때는 드래그 속도를 반영하여 판을 돌림
-    let baseSpeed = parseFloat(speedSlider.value);
-    let effectiveSpeed = isDragging ? baseSpeed + dragVelocity : baseSpeed;
+    // 1. 속도 결정 로직 변경
+    let effectiveSpeed;
+    
+    if (isDragging) {
+        // LP판을 잡고 있는 동안에는 슬라이더 배속(1배속 등)을 무시하고 
+        // 오직 마우스 움직임(dragVelocity)에 의해서만 소리가 납니다.
+        effectiveSpeed = dragVelocity; 
+    } else {
+        // 손을 뗐을 때만 슬라이더의 기본 배속이나 남은 관성 속도를 반영합니다.
+        effectiveSpeed = parseFloat(speedSlider.value) + dragVelocity;
+    }
+
+    // 2. 배속 제한 적용 (기존 tempo_rate 활용)
+    effectiveSpeed = Math.max(Math.min(effectiveSpeed, tempo_rate), -tempo_rate);
 
     let now = audioCtx.currentTime;
     let deltaTime = now - lastUpdateTime;
     lastUpdateTime = now;
 
-    // 드래그 중에는 오디오 위치도 드래그 속도에 맞춰 변화
+    // 현재 위치 및 각도 업데이트
     currentPosition += deltaTime * effectiveSpeed;
-    
-    // LP판 각도 업데이트 (동기화)
     const rotationPerSecond = 360 / 1.8;
     currentAngle += rotationPerSecond * effectiveSpeed * deltaTime;
     
     vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
     
-    // ... 기존 UI 업데이트 로직 (progressSlider 등) 동일
-
+    // 오디오 엔진 및 UI 반영
+    if (sourceNode) {
+        sourceNode.playbackRate.value = Math.abs(effectiveSpeed);
+        speedValue.textContent = effectiveSpeed.toFixed(3);
+    }
+    
     if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
         stopPlayback();
     } else {
