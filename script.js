@@ -157,8 +157,9 @@ function get_angle_display(value){
     return angle_display.textContent;
 }
 
-function calculate_angle(x, y){ // 좌표를 기준으로 현재 각도를 계산?
-    return Math.atan2(y=(y-centerY), x=(x-centerX)) * 180 / Math.PI
+function calculate_angle(x, y) {
+    // Math.atan2(y, x) 순서이며, 결과에 180/PI를 곱해 degree로 변환합니다.
+    return Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
 }
 
 function set_tempo(){//곡 속도 컨트롤
@@ -177,37 +178,30 @@ vinyl.onmousedown = (e) => {
     set_angle_display(calculate_angle(x=lastX, y=lastY))
 };
 
+
 window.onmousemove = (e) => {
     if (!isDragging || !isPlaying) return;
 
-    // 드래그 방향 및 거리 계산 (Y축 기준)
-    let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
-    let deltaX = lastX - e.clientX; // 위로 밀면 양수, 아래로 밀면 음수
-    let deltaAngle = calculate_angle(x=e.clientX, y=e.clientY) - lastAngle;
-
-
-    if( deltaAngle > 180){
-        deltaAngle = deltaAngle - (180*2);
-    }else if(deltaAngle < -180){
-        deltaAngle = deltaAngle + (180*2);
-    }
+    // 1. 현재 각도만 구합니다. (좌표 오타 수정 완료)
+    const currentMouseAngle = calculate_angle(e.clientX, e.clientY);
     
-    set_angle_display(lastAngle - calculate_angle(x=e.clientX, y=e.clientY));
+    // 2. 이전 각도와의 차이(deltaAngle)를 구합니다.
+    let deltaAngle = currentMouseAngle - lastAngle
 
-    lastX = e.clientX; 
-    lastY = e.clientY;
-    lastAngle = calculate_angle(x=lastX,y=lastY);
-    // 드래그 속도를 실제 재생 속도에 반영 (감도 조절: 0.05)
-    dragVelocity = deltaAngle * 0.5;
+    // 3. 180도 경계선 보정
+    if (deltaAngle > 180) deltaAngle -= 360;
+    else if (deltaAngle < -180) deltaAngle += 360;
     
-    // 현재 슬라이더 값에 드래그 속도를 더함
-    let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
+    // 4. 드래그 속도 반영 (감도는 0.01~0.02 추천)
+    dragVelocity = deltaAngle * 0.1; 
     
-    // 오디오 노드에 즉시 속도 반영
+    // 5. 다음 계산을 위해 현재 각도를 '마지막 각도'로 저장
+    lastAngle = currentMouseAngle;
+
+    // UI 및 오디오 반영
+    set_angle_display(currentMouseAngle.toFixed(2));
     if (sourceNode) {
-        // 일시적으로 아주 빠른 스크래치 소리를 위해 절대값 적용
-        speedValue.textContent = targetSpeed.toFixed(3);
-        sourceNode.playbackRate.value = Math.abs(targetSpeed); 
+        sourceNode.playbackRate.value = Math.abs(parseFloat(speedSlider.value) + dragVelocity); 
     }
 };
 
