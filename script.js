@@ -179,29 +179,34 @@ vinyl.onmousedown = (e) => {
 };
 
 
+// script.js
 window.onmousemove = (e) => {
     if (!isDragging || !isPlaying) return;
 
-    // 1. 현재 각도만 구합니다. (좌표 오타 수정 완료)
     const currentMouseAngle = calculate_angle(e.clientX, e.clientY);
-    
-    // 2. 이전 각도와의 차이(deltaAngle)를 구합니다.
-    let deltaAngle = currentMouseAngle - lastAngle
+    let deltaAngle = currentMouseAngle - lastAngle;
 
-    // 3. 180도 경계선 보정
     if (deltaAngle > 180) deltaAngle -= 360;
     else if (deltaAngle < -180) deltaAngle += 360;
     
-    // 4. 드래그 속도 반영 (감도는 0.01~0.02 추천)
     dragVelocity = deltaAngle * 0.1; 
-    
-    // 5. 다음 계산을 위해 현재 각도를 '마지막 각도'로 저장
     lastAngle = currentMouseAngle;
 
-    // UI 및 오디오 반영
-    set_angle_display(currentMouseAngle.toFixed(2));
     if (sourceNode) {
-        sourceNode.playbackRate.value = Math.abs(parseFloat(speedSlider.value) + dragVelocity); 
+        // 1. 기본 슬라이더 값에 드래그 속도를 합친 목표 배속 계산
+        let targetSpeed = parseFloat(speedSlider.value) + dragVelocity;
+
+        // 2. 배속 상한/하한 제한 (예: -5.0x ~ 5.0x)
+        // Math.max(값, 최소값) -> 최소값보다 작아지지 않게 함
+        // Math.min(값, 최대값) -> 최대값보다 커지지 않게 함
+        targetSpeed = Math.max(Math.min(targetSpeed, 5.0), -5.0);
+
+        // 3. 실제 오디오 엔진에 반영 (절대값 적용)
+        // 0.06배속 미만은 소리가 거의 들리지 않으므로 최소 재생 속도를 0.1 정도로 잡는 것도 좋습니다.
+        sourceNode.playbackRate.value = Math.abs(targetSpeed);
+        
+        // UI에도 제한된 배속을 표시
+        speedValue.textContent = targetSpeed.toFixed(3);
     }
 };
 
