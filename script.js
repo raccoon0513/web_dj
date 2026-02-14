@@ -29,13 +29,8 @@ const durationText = document.getElementById('duration');
 //angle_display_tester자체를 날릴 것
 const angle_display= document.getElementById('angle_display')
 
-//레코드판 중심 위치 가져오기
-const rect = vinyl.getBoundingClientRect();
-// 중심 X 좌표 = 요소의 왼쪽 시작점 + (너비 / 2)
-const centerX = rect.left + rect.width / 2;
 
-// 중심 Y 좌표 = 요소의 위쪽 시작점 + (높이 / 2)
-const centerY = rect.top + rect.height / 2;
+let centerX, centerY;
 
 
 // 오디오 엔진 초기화
@@ -175,9 +170,15 @@ function set_tempo(){//곡 속도 컨트롤
 vinyl.onmousedown = (e) => {
     if (!isPlaying) return;
     isDragging = true;
-    lastAngle = calculate_angle(x=e.clientX,y=e.clientY)
+
+    // 클릭하는 시점의 LP판 위치와 크기를 다시 계산합니다.
+    const rect = vinyl.getBoundingClientRect();
+    centerX = rect.left + rect.width / 2;
+    centerY = rect.top + rect.height / 2;
+
+    lastAngle = calculate_angle(e.clientX, e.clientY);
     vinyl.style.cursor = 'grabbing';
-    set_angle_display(lastAngle)
+    set_angle_display(lastAngle.toFixed(2));
 };
 
 
