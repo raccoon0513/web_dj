@@ -16,6 +16,8 @@ let dragVelocity = 0; // 드래그 속도 축적
 const tempo_rate = 5.0;
 // LP 민감도
 const lp_sensitivity = 0.05;
+// 마우스 뗐을 때 관성도 (기본값 0.95)
+const friction = 0.95; // 1에 가까울수록 오래 돌고, 작을수록 빨리 멈춥니다.
 //=======================
 
 const vinyl = document.getElementById('vinyl');
@@ -88,38 +90,51 @@ function playBuffer() { //재생관련함수
 function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
-    // 1. 속도 결정 로직 변경
+    // 1. 속도 결정 로직 (관성 및 잡기 효과)
+    let baseSpeed = parseFloat(speedSlider.value);
     let effectiveSpeed;
-    
+
     if (isDragging) {
-        // LP판을 잡고 있는 동안에는 슬라이더 배속(1배속 등)을 무시하고 
-        // 오직 마우스 움직임(dragVelocity)에 의해서만 소리가 납니다.
+        // LP판을 잡고 있는 동안에는 슬라이더 배속을 무시하고 드래그 속도만 반영 (0배속 효과)
         effectiveSpeed = dragVelocity; 
     } else {
-        // 손을 뗐을 때만 슬라이더의 기본 배속이나 남은 관성 속도를 반영합니다.
-        effectiveSpeed = parseFloat(speedSlider.value) + dragVelocity;
+        // 손을 뗐을 때 dragVelocity가 friction(예: 0.95)에 의해 서서히 줄어듭니다.
+        if (Math.abs(dragVelocity) > 0.001) {
+            dragVelocity *= friction; 
+        } else {
+            dragVelocity = 0;
+        }
+        // 기본 배속에 남은 관성 속도를 더합니다.
+        effectiveSpeed = baseSpeed + dragVelocity;
     }
 
-    // 2. 배속 제한 적용 (기존 tempo_rate 활용)
+    // 2. 배속 제한 적용 (Config에 설정한 tempo_rate 활용)
     effectiveSpeed = Math.max(Math.min(effectiveSpeed, tempo_rate), -tempo_rate);
 
     let now = audioCtx.currentTime;
     let deltaTime = now - lastUpdateTime;
     lastUpdateTime = now;
 
-    // 현재 위치 및 각도 업데이트
+    // 3. 현재 오디오 위치 및 LP 각도 업데이트
     currentPosition += deltaTime * effectiveSpeed;
-    const rotationPerSecond = 360 / 1.8;
+    const rotationPerSecond = 360 / 1.8; // 45RPM 기준 회전수 계산
     currentAngle += rotationPerSecond * effectiveSpeed * deltaTime;
     
+    // LP판 시각적 회전 반영
     vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
     
-    // 오디오 엔진 및 UI 반영
+    // 4. 오디오 엔진 및 속도 표시 UI 반영
     if (sourceNode) {
         sourceNode.playbackRate.value = Math.abs(effectiveSpeed);
         speedValue.textContent = effectiveSpeed.toFixed(3);
     }
-    
+
+    // 5. 진행 바 및 시간 표시 업데이트 (동일 로직)
+    const progress = (currentPosition / audioBuffer.duration) * 100;
+    progressSlider.value = Math.min(Math.max(0, progress), 100);
+    currentTimeText.textContent = formatTime(Math.max(0, currentPosition));
+
+    // 6. 재생 종료 조건 확인 및 루프
     if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
         stopPlayback();
     } else {
