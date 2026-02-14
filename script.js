@@ -141,6 +141,14 @@ function updateUI() {
         requestAnimationFrame(updateUI);
     }
 }
+
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    // 초가 10보다 작으면 앞에 '0'을 붙여 "01", "02" 처럼 표시합니다.
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 // 속도 조절 시 현재 위치를 유지하며 즉시 재 재생
 speedSlider.oninput = (e) => {
     const val = parseFloat(e.target.value);
