@@ -183,15 +183,14 @@ window.onmousemove = (e) => {
     // 드래그 방향 및 거리 계산 (Y축 기준)
     let deltaY = lastY - e.clientY; // 위로 밀면 양수, 아래로 밀면 음수
     let deltaX = lastX - e.clientX; // 위로 밀면 양수, 아래로 밀면 음수
-    let deltaAngle = lastAngle - calculate_angle(x=e.clientX, y=e.clientX)
+    let deltaAngle = lastAngle - calculate_angle(x=e.clientX, y=e.clientY)
 
     // TODO : 버그발생... 마우스가 180도를 넘어가는 순간 의문의 값이 더해진다.
-    // if( deltaAngle > 180){
-    //     deltaAngle = deltaAngle- (180*2)
-    // }
-    // if(deltaAngle < -180){
-    //     deltaAngle = deltaAngle+ (180*2)
-    // }
+    if( deltaAngle > 180){
+        deltaAngle = deltaAngle - (180*2)
+    }else if(deltaAngle < -180){
+        deltaAngle = deltaAngle + (180*2)
+    }
     
     set_angle_display(lastAngle - calculate_angle(x=e.clientX, y=e.clientX))
 
