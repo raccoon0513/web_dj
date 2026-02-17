@@ -15,11 +15,17 @@ let brakeVelocity = 0;
 //=======================
 // Config (fine-tunning)
 // 곡의 배속 한계(기본 5.0)
-const tempo_rate = 5;
-// LP 민감도
+const tempo_rate = 10;
+
+// LP 민감도 (기본 0.3)
 const lp_sensitivity = 0.3;
+
+// 민감도에 곱해지는 델타상수값?
+const alpha_delta = 1.3;
+
 // 마우스 클릭시 감쇄도
 const brake_force = 0.85; // 0에 가까울수록 급정거
+
 // 마우스 뗐을 때 관성도 (기본값 0.95)
 const friction = 0.95; // 1에 가까울수록 오래 돌고, 작을수록 빨리 멈춥니다.
 
@@ -104,7 +110,7 @@ function updateUI() {
             brakeVelocity = 0;
         }
         // 잡고 있는 동안은 브레이크 속도 + 드래그 속도만 반영
-        effectiveSpeed = brakeVelocity + dragVelocity;
+        effectiveSpeed = (brakeVelocity + dragVelocity) * lp_sensitivity;
     } else {
         // 손을 뗐을 때의 로직은 기존 관성 로직 유지
         if (Math.abs(dragVelocity) > 0.001) dragVelocity *= friction;
@@ -248,7 +254,7 @@ window.onmousemove = (e) => {
     else if (deltaAngle < -180) deltaAngle += 360;
     
     // 1. 드래그 속도 값만 갱신합니다.
-    dragVelocity = deltaAngle * lp_sensitivity; 
+    dragVelocity = deltaAngle; 
     lastAngle = currentMouseAngle;
 
     // 2. 디버깅용 각도 표시만 업데이트합니다.
