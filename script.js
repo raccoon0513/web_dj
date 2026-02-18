@@ -20,8 +20,8 @@ const tempo_rate = 5;
 // LP 민감도 (기본 0.3)
 const lp_sensitivity = 0.3;
 
-// 민감도에 곱해지는 델타상수값?
-const alpha_delta = 1.4;
+// 민감도에 곱해지는 델타상수값
+const alpha_delta = 1.3;
 
 // 마우스 클릭시 감쇄도
 const brake_force = 0.85; // 0에 가까울수록 급정거
@@ -100,52 +100,52 @@ function updateUI() {
     if (!isPlaying || !audioBuffer) return;
 
     let baseSpeed = parseFloat(speedSlider.value);
-    let effectiveSpeed;
+    let audioEffectiveSpeed; // 오디오 재생용 속도
+    let visualEffectiveSpeed; // LP판 회전용 속도
 
     if (isDragging) {
-        // [수정] 잡은 직후에는 기존 속도에서 brake_force만큼 서서히 0으로 감쇄
+        // 1. 잡고 있을 때의 감쇄 로직
         if (Math.abs(brakeVelocity) > 0.001) {
             brakeVelocity *= brake_force;
         } else {
             brakeVelocity = 0;
         }
-        // 잡고 있는 동안은 브레이크 속도 + 드래그 속도만 반영
-        effectiveSpeed = brakeVelocity + dragVelocity;
+        
+        // 2. 오디오 속도: 브레이크 + 드래그 속도에 alpha_delta 가중치 적용
+        audioEffectiveSpeed = (brakeVelocity + dragVelocity) * alpha_delta;
+        
+        // 3. 시각적 속도: 가중치 없이 순수하게 드래그한 만큼만 회전
+        visualEffectiveSpeed = brakeVelocity + dragVelocity;
     } else {
-        // 손을 뗐을 때의 로직은 기존 관성 로직 유지
+        // 4. 손을 뗐을 때: 기존 관성 로직 유지
         if (Math.abs(dragVelocity) > 0.001) dragVelocity *= friction;
         else dragVelocity = 0;
         
-        effectiveSpeed = baseSpeed + dragVelocity;
+        audioEffectiveSpeed = baseSpeed + dragVelocity;
+        visualEffectiveSpeed = baseSpeed + dragVelocity;
     }
 
-    if (filterNode) {
-        // 배속(effectiveSpeed)이 높을수록 컷오프 주파수를 낮춰서 먹먹한 소리를 냄
-        // 예: 1배속일 때 20kHz, 5배속일 때 5kHz로 제한
-        let cutoff = Math.max(2000, 20000 - Math.abs(effectiveSpeed) * 3000);
-        filterNode.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.1);
-    }
-
-
-    // 2. 배속 제한 적용 (Config에 설정한 tempo_rate 활용)
-    effectiveSpeed = Math.max(Math.min(effectiveSpeed, tempo_rate), -tempo_rate);
+    // 배속 제한 적용 (오디오와 시각적 속도 모두 적용)
+    audioEffectiveSpeed = Math.max(Math.min(audioEffectiveSpeed, tempo_rate), -tempo_rate);
+    visualEffectiveSpeed = Math.max(Math.min(visualEffectiveSpeed, tempo_rate), -tempo_rate);
 
     let now = audioCtx.currentTime;
     let deltaTime = now - lastUpdateTime;
     lastUpdateTime = now;
 
-    // 3. 현재 오디오 위치 및 LP 각도 업데이트
-    currentPosition += deltaTime * effectiveSpeed;
-    const rotationPerSecond = 360 / 1.8; // 45RPM 기준 회전수 계산
-    currentAngle += rotationPerSecond * effectiveSpeed * deltaTime;
+    // 5. 현재 오디오 위치 업데이트 (오디오 배속 기준)
+    currentPosition += deltaTime * audioEffectiveSpeed;
     
-    // LP판 시각적 회전 반영
+    // 6. LP판 각도 업데이트 (가중치가 없는 시각적 배속 기준)
+    const rotationPerSecond = 360 / 1.8;
+    currentAngle += rotationPerSecond * visualEffectiveSpeed * deltaTime;
+    
     vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
     
-    // 4. 오디오 엔진 및 속도 표시 UI 반영
+    // 7. 오디오 엔진 및 UI 반영
     if (sourceNode) {
-        sourceNode.playbackRate.value = Math.abs(effectiveSpeed);
-        speedValue.textContent = effectiveSpeed.toFixed(3);
+        sourceNode.playbackRate.value = Math.abs(audioEffectiveSpeed);
+        speedValue.textContent = audioEffectiveSpeed.toFixed(3);
     }
 
     // 5. 진행 바 및 시간 표시 업데이트 (동일 로직)
