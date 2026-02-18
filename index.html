@@ -6,7 +6,7 @@
     <title>My Personal Vinyl Player - Duo</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body>  
     <div class="player-container">
         <div class="deck" id="deck-a">
             <div class="turntable-wrapper">
@@ -14,7 +14,7 @@
                     <div class="vinyl"></div>
                 </div>
             </div>
-            <div class="library">
+            <div class="single_library library">
                 <h2>Deck A</h2>
                 <input type="file" class="fileInput" accept="audio/*" style="display: none;">
                 <button class="uploadBtn primary-btn">🎵 노래 업로드</button>
@@ -33,14 +33,18 @@
                 </div>
             </div>
         </div>
+        
+        <div class="multi_library library">
+            <h2>test</h2>
+        </div>
 
-        <div class="v-divider"></div> <div class="deck" id="deck-b">
+        <div class="deck" id="deck-b">
             <div class="turntable-wrapper">
                 <div class="turntable">
                     <div class="vinyl"></div>
                 </div>
             </div>
-            <div class="library">
+            <div class="single_library library">
                 <h2>Deck B</h2>
                 <input type="file" class="fileInput" accept="audio/*" style="display: none;">
                 <button class="uploadBtn primary-btn">🎵 노래 업로드</button>
@@ -58,7 +62,11 @@
                     <input type="range" class="speedSlider" min="-2" max="2" step="0.1" value="1">
                 </div>
             </div>
+
+            
         </div>
+
+        
     </div>
     <script src="script.js"></script>
 </body>
