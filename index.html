@@ -3,59 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Personal Vinyl Player</title>
+    <title>My Personal Vinyl Player - Duo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="player-container">
-        <div class="turntable">
-            <div id="vinyl" class="vinyl"></div>
-            <!-- <div id="tonearm" class="tonearm">
-                <div class="arm-base"></div>
-                <div class="needle"></div>
-            </div> -->
+        <div class="deck" id="deck-a">
+            <div class="turntable-wrapper">
+                <div class="turntable">
+                    <div class="vinyl"></div>
+                </div>
+            </div>
+            <div class="library">
+                <h2>Deck A</h2>
+                <input type="file" class="fileInput" accept="audio/*" style="display: none;">
+                <button class="uploadBtn primary-btn">🎵 노래 업로드</button>
+                
+                <div class="progress-container">
+                    <div class="time-info">
+                        <span class="currentTime">0:00</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <input type="range" class="progressSlider" min="0" max="100" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Speed: <span class="speedValue">1.000</span>x</label>
+                    <input type="range" class="speedSlider" min="-2" max="2" step="0.1" value="1">
+                </div>
+            </div>
         </div>
 
-        <div class="library">
-            <h2>Vinyl Session</h2>
-            <input type="file" id="fileInput" accept="audio/*" style="display: none;">
-            <button id="uploadBtn" class="primary-btn">🎵 노래 업로드하기</button>
-            <div id="dropZone" class="drop-zone">또는 파일을 여기에 드래그</div>
-
-            <div class="progress-container" style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
-                    <span id="currentTime">0:00</span>
-                    <span id="duration">0:00</span>
-                </div>
-                <input type="range" id="progressSlider" min="0" max="100" value="0" style="width: 100%; accent-color: var(--accent);">
-            </div>
-
-            <div class="control-group" style="margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
-                <label for="speedSlider">Playback Speed: <span id="speedValue">1.0</span>x</label>
-                <input type="range" id="speedSlider" min="-2" max="2" step="0.1" value="1" style="width: 100%;">
-                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 5px;">
-                    <span>-2x (Reverse)</span>
-                    <span>0</span>
-                    <span>2x</span>
+        <div class="v-divider"></div> <div class="deck" id="deck-b">
+            <div class="turntable-wrapper">
+                <div class="turntable">
+                    <div class="vinyl"></div>
                 </div>
             </div>
-
-            <div class="angle_display_tester" style="margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
-                    <span id="angle_display">0</span>
+            <div class="library">
+                <h2>Deck B</h2>
+                <input type="file" class="fileInput" accept="audio/*" style="display: none;">
+                <button class="uploadBtn primary-btn">🎵 노래 업로드</button>
+                
+                <div class="progress-container">
+                    <div class="time-info">
+                        <span class="currentTime">0:00</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <input type="range" class="progressSlider" min="0" max="100" value="0">
                 </div>
- 
-            </div>
 
-            <div id="currentTrack" class="playlist" style="padding: 20px; text-align: center;">
-                현재 준비된 곡이 없습니다.
+                <div class="control-group">
+                    <label>Speed: <span class="speedValue">1.000</span>x</label>
+                    <input type="range" class="speedSlider" min="-2" max="2" step="0.1" value="1">
+                </div>
             </div>
-            
         </div>
-        
     </div>
-
-    
     <script src="script.js"></script>
 </body>
 </html>

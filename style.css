@@ -10,7 +10,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text);
@@ -18,87 +18,89 @@ body {
 
 .player-container {
     display: flex;
-    width: 900px;
-    height: 550px;
+    width: 1200px; /* 두 개 배치를 위해 너비 확장 */
     background-color: var(--wood-color);
     border-radius: 15px;
     padding: 25px;
     box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    gap: 20px;
 }
 
-/* 턴테이블 디자인 */
-/* style.css */
+.deck {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.turntable-wrapper {
+    background: #222;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
 .turntable {
     position: relative;
-    width: 550px;  /* px 단위 추가 */
-    height: 550px; /* px 단위 추가 */
-    flex: 1.5;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     background-image: url(./turntable_without_tonearm.png);
     background-position: center;
-    background-size: 120%;
-    border-radius: 10px;
+    background-size: cover;
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
 }
 
 .vinyl {
-    width: 380px;
-    height: 380px;
+    width: 85%;
+    height: 85%;
     background-image: url(lp.png);
     background-position: center;
-    background-size: 100%;
+    background-size: cover;
     border-radius: 50%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    will-change: transform; /* 성능 최적화를 위해 추가 */
+    will-change: transform;
 }
 
-
-/* 라이브러리 목록 */
 .library {
-    flex: 1;
-    padding: 0 0 0 25px;
-    display: flex;
-    flex-direction: column;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
 }
 
-.playlist {
-    margin-top: 20px;
-    flex-grow: 1;
-    overflow-y: auto;
+.control-group, .progress-container {
+    margin-top: 15px;
+    padding: 10px;
     background: rgba(0,0,0,0.2);
     border-radius: 8px;
 }
 
-.track-item {
-    padding: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    cursor: pointer;
-    transition: background 0.2s;
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 5px;
 }
 
-.track-item:hover {
-    background: rgba(255,87,34,0.15);
-}
-
-.drop-zone {
-    margin-top: 15px;
-    border: 2px dashed rgba(255,255,255,0.2);
-    padding: 20px;
-    text-align: center;
-    font-size: 0.9em;
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
 }
 
 .primary-btn {
+    width: 100%;
     background-color: var(--accent);
     color: white;
     border: none;
-    padding: 12px;
+    padding: 10px;
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
+}
+
+.v-divider {
+    width: 2px;
+    background: rgba(255,255,255,0.1);
+    align-self: stretch;
 }

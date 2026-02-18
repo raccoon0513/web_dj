@@ -1,307 +1,75 @@
-let audioCtx, sourceNode, audioBuffer, reversedBuffer, filterNode;
-let isPlaying = false;
-let currentPosition = 0; // 현재 곡의 위치 (초)
-let lastUpdateTime = 0;  // 마지막으로 위치를 계산한 시점
-let currentAngle = 0;
+class VinylDeck {
+    constructor(id) {
+        this.id = id;
+        this.container = document.getElementById(id);
+        this.isPlaying = false;
+        this.currentPosition = 0;
+        this.currentAngle = 0;
+        this.isDragging = false;
+        this.dragVelocity = 0;
+        this.brakeVelocity = 0;
+        
+        // 설정값
+        this.config = {
+            tempo_rate: 5.0,
+            lp_sensitivity: 0.05,
+            brake_force: 0.85,
+            friction: 0.95
+        };
 
-// 드래그 조작을 위한 변수 추가
-let isDragging = false;
-let lastAngle = 0;
-let dragVelocity = 0; // 드래그 속도 축적
+        this.initDOM();
+        this.initEvents();
+    }
 
-//정지시 컨트롤을 위한 변수
-let brakeVelocity = 0;
+    initDOM() {
+        this.vinyl = this.container.querySelector('.vinyl');
+        this.speedSlider = this.container.querySelector('.speedSlider');
+        this.speedValue = this.container.querySelector('.speedValue');
+        this.fileInput = this.container.querySelector('.fileInput');
+        this.uploadBtn = this.container.querySelector('.uploadBtn');
+    }
 
-//=======================
-// Config (fine-tunning)
-// 곡의 배속 한계(기본 5.0)
-const tempo_rate = 5;
-
-// LP 민감도 (기본 0.3)
-const lp_sensitivity = 0.3;
-
-// 민감도에 곱해지는 델타상수값
-const alpha_delta = 1.3;
-
-// 마우스 클릭시 감쇄도
-const brake_force = 0.85; // 0에 가까울수록 급정거
-
-// 마우스 뗐을 때 관성도 (기본값 0.95)
-const friction = 0.95; // 1에 가까울수록 오래 돌고, 작을수록 빨리 멈춥니다.
-
-//=======================
-
-const vinyl = document.getElementById('vinyl');
-const speedSlider = document.getElementById('speedSlider');
-const speedValue = document.getElementById('speedValue');
-const progressSlider = document.getElementById('progressSlider');
-const currentTimeText = document.getElementById('currentTime');
-const durationText = document.getElementById('duration');
-
-// TODO : 테스트용 angle display 출력기임. 후에 html 내 div태그랑 같이 삭제할 것
-//angle_display_tester자체를 날릴 것
-const angle_display= document.getElementById('angle_display')
-
-
-let centerX, centerY;
-
-
-// 오디오 엔진 초기화
-async function handleFile(file) { //file input 관련 함수
-    if (!file || !file.type.startsWith('audio/')) return;
-
-    initAudio();
-    const arrayBuffer = await file.arrayBuffer();
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-    // 역재생용 버퍼 생성: 원본 데이터를 복사하여 뒤집음
-    reversedBuffer = audioCtx.createBuffer(
-        audioBuffer.numberOfChannels,
-        audioBuffer.length,
-        audioBuffer.sampleRate
-    );
-
-    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
-        const chanData = audioBuffer.getChannelData(i);
-        const revChanData = reversedBuffer.getChannelData(i);
-        for (let j = 0; j < audioBuffer.length; j++) {
-            revChanData[j] = chanData[audioBuffer.length - 1 - j];
+    async initAudio() {
+        if (!this.audioCtx) {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            this.filterNode = this.audioCtx.createBiquadFilter();
+            this.filterNode.type = 'lowpass';
+            this.filterNode.connect(this.audioCtx.destination);
         }
     }
 
-    playBuffer();
-}
+    // 기존의 updateUI, playBuffer, handleFile 로직을 
+    // 클래스 메서드(this.updateUI 등)로 이식합니다.
+    updateUI() {
+        if (!this.isPlaying) return;
 
-function playBuffer() { //재생관련함수
-    if (sourceNode) sourceNode.stop();
+        let baseSpeed = parseFloat(this.speedSlider.value);
+        let effectiveSpeed;
 
-    initAudio();
-    sourceNode = audioCtx.createBufferSource();
-    const speed = parseFloat(speedSlider.value);
-    const isReversed = speed < 0;
-
-    // 현재 위치를 기준으로 어떤 버퍼의 어느 지점에서 시작할지 결정
-    sourceNode.buffer = isReversed ? reversedBuffer : audioBuffer;
-    sourceNode.playbackRate.value = Math.abs(speed);
-    sourceNode.connect(filterNode);
-
-    // 역재생 버퍼는 데이터가 뒤집혀 있으므로 시작 지점도 뒤집어서 계산
-    const startOffset = isReversed ? (audioBuffer.duration - currentPosition) : currentPosition;
-
-    sourceNode.start(0, Math.max(0, startOffset));
-    lastUpdateTime = audioCtx.currentTime;
-    isPlaying = true;
-    vinyl.classList.add('spinning');
-    
-    updateUI(); // 진행 바 업데이트 시작
-}
-
-function updateUI() {
-    if (!isPlaying || !audioBuffer) return;
-
-    let baseSpeed = parseFloat(speedSlider.value);
-    let audioEffectiveSpeed; // 오디오 재생용 속도
-    let visualEffectiveSpeed; // LP판 회전용 속도
-
-    if (isDragging) {
-        // 1. 잡고 있을 때의 감쇄 로직
-        if (Math.abs(brakeVelocity) > 0.001) {
-            brakeVelocity *= brake_force;
+        if (this.isDragging) {
+            this.brakeVelocity *= this.config.brake_force;
+            effectiveSpeed = this.brakeVelocity + this.dragVelocity;
         } else {
-            brakeVelocity = 0;
+            this.dragVelocity *= this.config.friction;
+            effectiveSpeed = baseSpeed + this.dragVelocity;
         }
+
+        // 오디오 및 필터 처리
+        this.applyAudioEffect(effectiveSpeed);
         
-        // 2. 오디오 속도: 브레이크 + 드래그 속도에 alpha_delta 가중치 적용
-        audioEffectiveSpeed = (brakeVelocity + dragVelocity) * alpha_delta;
-        
-        // 3. 시각적 속도: 가중치 없이 순수하게 드래그한 만큼만 회전
-        visualEffectiveSpeed = brakeVelocity + dragVelocity;
-    } else {
-        // 4. 손을 뗐을 때: 기존 관성 로직 유지
-        if (Math.abs(dragVelocity) > 0.001) dragVelocity *= friction;
-        else dragVelocity = 0;
-        
-        audioEffectiveSpeed = baseSpeed + dragVelocity;
-        visualEffectiveSpeed = baseSpeed + dragVelocity;
+        // 시각적 회전 처리
+        this.renderVinyl(effectiveSpeed);
+
+        requestAnimationFrame(() => this.updateUI());
     }
 
-    // 배속 제한 적용 (오디오와 시각적 속도 모두 적용)
-    audioEffectiveSpeed = Math.max(Math.min(audioEffectiveSpeed, tempo_rate), -tempo_rate);
-    visualEffectiveSpeed = Math.max(Math.min(visualEffectiveSpeed, tempo_rate), -tempo_rate);
-
-    let now = audioCtx.currentTime;
-    let deltaTime = now - lastUpdateTime;
-    lastUpdateTime = now;
-
-    // 5. 현재 오디오 위치 업데이트 (오디오 배속 기준)
-    currentPosition += deltaTime * audioEffectiveSpeed;
-    
-    // 6. LP판 각도 업데이트 (가중치가 없는 시각적 배속 기준)
-    const rotationPerSecond = 360 / 1.8;
-    currentAngle += rotationPerSecond * visualEffectiveSpeed * deltaTime;
-    
-    vinyl.style.transform = `rotate(${currentAngle % 360}deg)`;
-    
-    // 7. 오디오 엔진 및 UI 반영
-    if (sourceNode) {
-        sourceNode.playbackRate.value = Math.abs(audioEffectiveSpeed);
-        speedValue.textContent = audioEffectiveSpeed.toFixed(3);
-    }
-
-    // 5. 진행 바 및 시간 표시 업데이트 (동일 로직)
-    const progress = (currentPosition / audioBuffer.duration) * 100;
-    progressSlider.value = Math.min(Math.max(0, progress), 100);
-    currentTimeText.textContent = formatTime(Math.max(0, currentPosition));
-
-    // 6. 재생 종료 조건 확인 및 루프
-    if (currentPosition >= audioBuffer.duration || currentPosition < 0) {
-        stopPlayback();
-    } else {
-        requestAnimationFrame(updateUI);
+    renderVinyl(speed) {
+        const rotationPerSecond = 360 / 1.8;
+        this.currentAngle += rotationPerSecond * speed * 0.016; // deltaTime 대략치
+        this.vinyl.style.transform = `rotate(${this.currentAngle % 360}deg)`;
     }
 }
 
-function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    // 초가 10보다 작으면 앞에 '0'을 붙여 "01", "02" 처럼 표시합니다.
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
-// 속도 조절 시 현재 위치를 유지하며 즉시 재 재생
-speedSlider.oninput = (e) => {
-    const val = parseFloat(e.target.value);
-
-    //인터페이스 속도 표시창 값 변경
-    speedValue.textContent = val.toFixed(3);
-
-    vinyl.style.animationDirection = val < 0 ? 'reverse' : 'normal';
-
-    if (isPlaying && audioBuffer) {
-        const isReversing = val < 0;
-        const currentlyReversed = (sourceNode.buffer === reversedBuffer);
-
-        // 방향이 바뀌는 임계점(0)에서 버퍼를 교체해야 함
-        if (isReversing !== currentlyReversed) {
-            playBuffer(); 
-        } else {
-            sourceNode.playbackRate.value = Math.abs(val);
-        }
-    }
-};
-
-function stopPlayback() {
-    isPlaying = false;
-    currentPosition = 0; // 초기화
-    vinyl.classList.remove('spinning');
-}
-
-function initAudio() { // 오디오 버퍼 초기화
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        filterNode = audioCtx.createBiquadFilter();
-        filterNode.type = 'lowpass';
-        filterNode.frequency.value = 20000; // 기본은 모든 소리 통과
-        filterNode.connect(audioCtx.destination);
-    }
-}
-
-// TODO : 이벤트 리스너 및 기타 함수 찾아서 angle_display 값 변경하는 코드 짜기
-// get/set으로 설정할까?
-
-function set_angle_display(value){
-    angle_display.textContent = value;
-    return
-}
-function get_angle_display(value){
-    return angle_display.textContent;
-}
-
-function calculate_angle(x, y) {
-    // Math.atan2(y, x) 순서이며, 결과에 180/PI를 곱해 degree로 변환합니다.
-    return Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
-}
-
-function set_tempo(){//곡 속도 컨트롤
-
-}
-
-// 1. LP판 클릭/드래그 이벤트 설정
-vinyl.onmousedown = (e) => {
-    if (!isPlaying) return;
-    isDragging = true;
-
-    // lp 정지시 관성을 가지고 속도 줄임
-    brakeVelocity = parseFloat(speedSlider.value) + dragVelocity;
-
-    // 클릭하는 시점의 LP판 위치와 크기를 다시 계산합니다.
-    const rect = vinyl.getBoundingClientRect();
-    centerX = rect.left + rect.width / 2;
-    centerY = rect.top + rect.height / 2;
-
-    lastAngle = calculate_angle(e.clientX, e.clientY);
-    vinyl.style.cursor = 'grabbing';
-    set_angle_display(lastAngle.toFixed(2));
-};
-
-window.onmousemove = (e) => {
-    if (!isDragging || !isPlaying) return;
-
-    const currentMouseAngle = calculate_angle(e.clientX, e.clientY);
-    let deltaAngle = currentMouseAngle - lastAngle;
-
-    if (deltaAngle > 180) deltaAngle -= 360;
-    else if (deltaAngle < -180) deltaAngle += 360;
-    
-    // 1. 드래그 속도 값만 갱신합니다.
-    dragVelocity = deltaAngle * lp_sensitivity; 
-    lastAngle = currentMouseAngle;
-
-    // 2. 디버깅용 각도 표시만 업데이트합니다.
-    set_angle_display(currentMouseAngle.toFixed(2));
-    
-};
-
-window.onmouseup = () => {
-    if (isDragging) {
-        isDragging = false;
-        vinyl.style.cursor = 'pointer';
-        
-        // 마우스를 떼면 다시 슬라이더의 설정 속도로 부드럽게 복귀
-        if (sourceNode && isPlaying) {
-            sourceNode.playbackRate.value = Math.abs(parseFloat(speedSlider.value));
-        }
-    }
-};
-
-// 1. 노래 업로드 버튼 클릭 시 파일 선택창 열기
-const uploadBtn = document.getElementById('uploadBtn');
-const fileInput = document.getElementById('fileInput');
-
-uploadBtn.onclick = () => fileInput.click();
-
-fileInput.onchange = (e) => {
-    if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
-    }
-};
-
-const dropZone = document.getElementById('dropZone');
-
-dropZone.ondragover = (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = "#ff5722";
-};
-
-dropZone.ondragleave = () => {
-    dropZone.style.borderColor = "rgba(255,255,255,0.2)";   
-};
-
-dropZone.ondrop = (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = "rgba(255,255,255,0.2)";
-    if (e.dataTransfer.files.length > 0) {
-        handleFile(e.dataTransfer.files[0]);
-    }
-};
-
+// 두 개의 데크 인스턴스 생성
+const deckA = new VinylDeck('deck-a');
+const deckB = new VinylDeck('deck-b');
