@@ -6,6 +6,9 @@
 }
 
 body {
+    /* 테스트용 코드 후에 삭제할 것 */
+    outline: solid red 100px;
+
     background-color: #1a1a1a;
     display: flex;
     justify-content: center;
@@ -99,8 +102,3 @@ input[type="range"] {
     font-weight: bold;
 }
 
-.v-divider {
-    width: 2px;
-    background: rgba(255,255,255,0.1);
-    align-self: stretch;
-}
