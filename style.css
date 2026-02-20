@@ -37,6 +37,9 @@ body {
     flex-direction: column;
     gap: 15px;
 }
+#multi-deck{
+    width: 50%;
+}
 
 .turntable-wrapper {
     background: #222;
