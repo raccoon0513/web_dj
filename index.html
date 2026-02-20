@@ -14,7 +14,7 @@
                     <div class="vinyl"></div>
                 </div>
             </div>
-            <div class="single_library library">
+            <div class="single-library library">
                 <h2>Deck A</h2>
                 <input type="file" class="fileInput" accept="audio/*" style="display: none;">
                 <button class="uploadBtn primary-btn">🎵 노래 업로드</button>
@@ -34,9 +34,18 @@
             </div>
         </div>
         
-        <div class="multi_library library">
-            <div class="audio_wave_viewer"></div>
-            
+        <!-- 중앙 멀티 라이브러리 -->
+        <div class="multi-library library">
+            <div class="audio-wave-container">
+                <div class="audio-wave-viewer" id="audio-wave-viewer-a"></div>
+                <button class="sync-toggle-btn" id="sync-toggle-btn-a">sync</button>
+                <span class="bpm-viewr" id="bpm-viewr-a">0bpm</span>
+
+                <div class="audio-wave-viewer" id="audio-wave-viewer-b"></div>
+                <button class="sync-toggle-btn" id="sync-toggle-btn-b">sync</button>
+                <span class="bpm-viewr" id="bpm-viewr-b">0bpm</span>
+            </div>
+
             
         </div>
 
@@ -46,7 +55,7 @@
                     <div class="vinyl"></div>
                 </div>
             </div>
-            <div class="single_library library">
+            <div class="single-library library">
                 <h2>Deck B</h2>
                 <input type="file" class="fileInput" accept="audio/*" style="display: none;">
                 <button class="uploadBtn primary-btn">🎵 노래 업로드</button>

@@ -5,10 +5,12 @@
     --text: #eceff1;
 }
 
-body {
-    /* 테스트용 코드 후에 삭제할 것 */
-    outline: solid red 100px;
+div{
+    /* TODO :  테스트용 css 후에 삭제 필수 */
+    outline : 3px red solid;
+}
 
+body {
     background-color: #1a1a1a;
     display: flex;
     justify-content: center;
