@@ -34,10 +34,26 @@
                 </div>
 
                 <div class="eq-container" id="eq-container-a">
-                    <div class="gain-knob" id="gain-knob-a"></div>
-                    <div class="low-knob" id="low-knob-a"></div>
-                    <div class="middle-knob" id="middle-knob-a"></div>
-                    <div class="high-knob" id="high-knob-a"></div>
+                    <div class="gain-slider">
+                        <div class="to-center-container"><span>gain</span></div>
+                        <input type="range" class="vertical-slider" id="gain-slider-a">
+                        <div class="to-center-container"><button class="reset-btn" id="gain-reset-a">reset</button></div>
+                    </div>
+                    <div class="low-slider" >
+                        <div class="to-center-container"><span>low</span></div>
+                        <input type="range" class="vertical-slider" id="low-slider-a">
+                        <div class="to-center-container"><button class="reset-btn" id="low-reset-a">reset</button></div>
+                    </div>
+                    <div class="middle-slider">
+                        <div class="to-center-container"><span>low</span></div>
+                        <input type="range" class="vertical-slider" id="middle-slider-a">
+                        <div class="to-center-container"><button class="reset-btn" id="middle-reset-a">reset</button></div>
+                    </div>
+                    <div class="high-slider" >
+                        <div class="to-center-container"><span>high</span></div>
+                        <input type="range" class="vertical-slider" id="high-slider-a">
+                        <div class="to-center-container"><button class="reset-btn" id="high-reset-a">reset</button></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -54,7 +70,9 @@
                 <span class="bpm-viewr" id="bpm-viewr-b">0bpm</span>
             </div>
             
-            <div class="crossfader"></div>
+            <div class="crossfader">
+                <input type="range" class="crossfader-slider" min="0" max="100" value="50">
+            </div>
 
             
         </div>
@@ -82,15 +100,30 @@
                     <label>Speed: <span class="speedValue">1.000</span>x</label>
                     <input type="range" class="speedSlider" min="-2" max="2" step="0.1" value="1">
                 </div>
+
                 <div class="eq-container" id="eq-container-b">
-                    <div class="gain-knob" id="gain-knob-b"></div>
-                    <div class="low-knob" id="low-knob-b"></div>
-                    <div class="middle-knob" id="middle-knob-b"></div>
-                    <div class="high-knob" id="high-knob-b"></div>
+                    <div class="gain-slider">
+                        <div class="to-center-container"><span>gain</span></div>
+                        <input type="range" class="vertical-slider" id="gain-slider-b">
+                        <div class="to-center-container"><button class="reset-btn" id="gain-reset-b">reset</button></div>
+                    </div>
+                    <div class="low-slider" >
+                        <div class="to-center-container"><span>low</span></div>
+                        <input type="range" class="vertical-slider" id="low-slider-b">
+                        <div class="to-center-container"><button class="reset-btn" id="low-reset-b">reset</button></div>
+                    </div>
+                    <div class="middle-slider">
+                        <div class="to-center-container"><span>low</span></div>
+                        <input type="range" class="vertical-slider" id="middle-slider-b">
+                        <div class="to-center-container"><button class="reset-btn" id="middle-reset-b">reset</button></div>
+                    </div>
+                    <div class="high-slider" >
+                        <div class="to-center-container"><span>high</span></div>
+                        <input type="range" class="vertical-slider" id="high-slider-b">
+                        <div class="to-center-container"><button class="reset-btn" id="high-reset-b">reset</button></div>
+                    </div>
                 </div>
             </div>
-
-            
         </div>
 
         

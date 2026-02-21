@@ -31,6 +31,11 @@ body {
     gap: 20px;
 }
 
+.to-center-container{
+    display: flex;
+    justify-content: center;
+}
+
 .deck {
     flex: 1;
     display: flex;
@@ -111,37 +116,31 @@ body {
     outline: none;
     border-radius: 5px;
 }
+
 /* EQ 컨테이너 및 노브 스타일 */
 .eq-container {
     display: flex;
     justify-content: space-around;
-    margin-top: 15px;
-    padding: 10px;
     background: rgba(0,0,0,0.2);
     border-radius: 8px;
 }
 
-[class$="-knob"] {
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(circle at 30% 30%, #555, #222);
-    border-radius: 50%;
-    border: 2px solid #444;
-    cursor: pointer;
-    position: relative;
+.vertical-slider {
+    /* 기본 가로 스타일 제거 */
+    appearance: slider-vertical; 
+    width: 8px;
+    height: 150px;
+    outline: none;
 }
 
-/* 노브의 현재 눈금 표시 */
-[class$="-knob"]::after {
-    content: '';
-    position: absolute;
-    top: 5px;
-    left: 50%;
-    width: 2px;
-    height: 10px;
-    background: var(--accent);
-    transform: translateX(-50%);
+/* 크롬, 사파리 계열을 위한 추가 속성 */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .vertical-slider {
+        writing-mode: bt-lr; /* Bottom to Top */
+        -webkit-appearance: slider-vertical;
+    }
 }
+
 
 .time-info {
     display: flex;
