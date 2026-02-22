@@ -72,7 +72,10 @@ class VinylDeck {
         }
         if(this.volSlider) {
             this.volSlider.oninput = (e) => {
-                if (this.gainNode) this.gainNode.gain.value = e.target.value;
+                if (this.gainNode) {
+                    // 게인은 value를 직접 조절하거나 setTargetAtTime 사용 가능
+                    this.gainNode.gain.setTargetAtTime(parseFloat(e.target.value), this.audioCtx.currentTime, 0.02);
+                }
             };
         }
 
@@ -80,7 +83,7 @@ class VinylDeck {
         const bindEQ = (slider, filter) => {
             if(slider) {
                 slider.oninput = (e) => {
-                    if (filter) filter.gain.setTargetAtTime(e.target.value, this.audioCtx.currentTime, 0.01);
+                    if (filter) filter.gain.setTargetAtTime(e.target.value, this.audioCtx.currentTime, 0.1);
                 };
             }
         };
