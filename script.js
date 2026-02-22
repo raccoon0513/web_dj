@@ -70,7 +70,25 @@ class VinylDeck {
             this.eqHigh.connect(this.gainNode);
             this.gainNode.connect(this.audioCtx.destination);
         }
-        
+        if(this.volSlider) {
+            this.volSlider.oninput = (e) => {
+                if (this.gainNode) this.gainNode.gain.value = e.target.value;
+            };
+        }
+
+        // EQ 조절 (범위: -24dB ~ +12dB 정도가 적당합니다)
+        const bindEQ = (slider, filter) => {
+            if(slider) {
+                slider.oninput = (e) => {
+                    if (filter) filter.gain.setTargetAtTime(e.target.value, this.audioCtx.currentTime, 0.01);
+                };
+            }
+        };
+
+        bindEQ(this.lowSlider, this.eqLow);
+        bindEQ(this.midSlider, this.eqMid);
+        bindEQ(this.highSlider, this.eqHigh);
+            
     }
     createFilter(type, frequency) {
         const filter = this.audioCtx.createBiquadFilter();
@@ -105,10 +123,10 @@ class VinylDeck {
 
     playBuffer() {
         if (this.sourceNode) this.sourceNode.stop();
-        this.sourceNode = this.audioCtx.createBufferSource();
+        this.sourceNode = this.audioCtx.createBufferSource();   
         const speed = parseFloat(this.speedSlider.value);
         this.sourceNode.buffer = speed < 0 ? this.reversedBuffer : this.audioBuffer;
-        this.sourceNode.connect(this.filterNode);
+        this.sourceNode.connect(this.eqLow);
         
         const offset = speed < 0 ? (this.audioBuffer.duration - this.currentPosition) : this.currentPosition;
         this.sourceNode.start(0, Math.max(0, offset));
