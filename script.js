@@ -219,3 +219,20 @@ class VinylDeck {
 
 const deckA = new VinylDeck('deck-a');
 const deckB = new VinylDeck('deck-b');
+
+const crossfader = document.querySelector('.crossfader-slider');
+
+crossfader.oninput = (e) => {
+    // 0(왼쪽 끝) ~ 100(오른쪽 끝) 사이의 값을 0 ~ 1 비율로 변환
+    const value = parseFloat(e.target.value) / 100;
+    
+    // 왼쪽(A) 데크: 슬라이더가 오른쪽으로 갈수록 소리가 작아짐 (1 - value)
+    if (deckA.gainNode) {
+        deckA.gainNode.gain.setTargetAtTime(1 - value, deckA.audioCtx.currentTime, 0.02);
+    }
+    
+    // 오른쪽(B) 데크: 슬라이더가 오른쪽으로 갈수록 소리가 커짐 (value)
+    if (deckB.gainNode) {
+        deckB.gainNode.gain.setTargetAtTime(value, deckB.audioCtx.currentTime, 0.02);
+    }
+};
