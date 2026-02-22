@@ -34,24 +34,33 @@
                 </div>
 
                 <div class="eq-container" id="eq-container-a">
-                    <div class="gain-slider to-center-container">
+                    <div class="gain-slider to-center-container flex-direction-column">
                         <span>gain</span>
-                        <input type="range" class="vertical-slider" id="vol-a">
+                        <div class="to-center-container flex-direction-row">
+                            <input type="range" class="vertical-slider" id="vol-a" step="0.1" min="-24" max="12">
+                            <div class="to-center-container flex-direction-column" style="height: 100%;">
+                                <!-- TODO : 눈금 표시해줄 방법 고민해보기 -->
+                                <span>12</span>
+                                <span>0</span>
+                                <span>-12</span>
+                                <span>-24</span>
+                            </div>
+                        </div>
                         <button class="reset-btn" id="gain-reset-a">reset</button>
                     </div>
-                    <div class="low-slider to-center-container">
+                    <div class="low-slider to-center-container flex-direction-column">
                         <span>low</span>
-                        <input type="range" class="vertical-slider" id="low-a">
+                        <input type="range" class="vertical-slider" id="low-a" step="0.1" min="-24" max="12" >
                         <button class="reset-btn" id="low-reset-a">reset</button>
                     </div>
-                    <div class="middle-slider to-center-container">
-                        <span>low</span>
-                        <input type="range" class="vertical-slider" id="mid-a">
+                    <div class="middle-slider to-center-container flex-direction-column">
+                        <span>mid</span>
+                        <input type="range" class="vertical-slider" id="mid-a" step="0.1" min="-24" max="12" >
                         <button class="reset-btn" id="middle-reset-a">reset</button>
                     </div>
-                    <div class="high-slider to-center-container">
+                    <div class="high-slider to-center-container flex-direction-column">
                         <span>high</span>
-                        <input type="range" class="vertical-slider" id="high-a">
+                        <input type="range" class="vertical-slider" id="high-a" step="0.1" min="-24" max="12" >
                         <button class="reset-btn" id="high-reset-a">reset</button>
                     </div>
                 </div>
