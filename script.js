@@ -30,6 +30,13 @@ class VinylDeck {
         this.progressSlider = this.container.querySelector('.progressSlider');
         this.currentTimeText = this.container.querySelector('.currentTime');
         this.durationText = this.container.querySelector('.duration');
+
+        const suffix = this.id.split('-')[1]; // 'a' 또는 'b'
+    
+        this.volSlider = document.getElementById(`vol-${suffix}`);
+        this.lowSlider = document.getElementById(`low-${suffix}`);
+        this.midSlider = document.getElementById(`mid-${suffix}`);
+        this.highSlider = document.getElementById(`high-${suffix}`);
     }
 
     initEvents() {
@@ -48,10 +55,30 @@ class VinylDeck {
     async initAudio() {
         if (!this.audioCtx) {
             this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            this.filterNode = this.audioCtx.createBiquadFilter();
-            this.filterNode.type = 'lowpass';
-            this.filterNode.connect(this.audioCtx.destination);
+            
+            // 1. 게인 노드 (볼륨) 생성
+            this.gainNode = this.audioCtx.createGain();
+            
+            // 2. EQ 필터 노드들 생성 (High, Mid, Low)
+            this.eqHigh = this.createFilter('highshelf', 3000);
+            this.eqMid = this.createFilter('peaking', 1000);
+            this.eqLow = this.createFilter('lowshelf', 150);
+
+            // 3. 필터 체인 연결: Source -> Low -> Mid -> High -> Gain -> Destination
+            this.eqLow.connect(this.eqMid);
+            this.eqMid.connect(this.eqHigh);
+            this.eqHigh.connect(this.gainNode);
+            this.gainNode.connect(this.audioCtx.destination);
         }
+        
+    }
+    createFilter(type, frequency) {
+        const filter = this.audioCtx.createBiquadFilter();
+        filter.type = type;
+        filter.frequency.value = frequency;
+        filter.Q.value = 1;
+        filter.gain.value = 0; // 기본값 0dB
+        return filter;
     }
 
     async handleFile(file) {
