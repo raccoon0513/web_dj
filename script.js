@@ -118,7 +118,40 @@ class VinylDeck {
         this.playBuffer();
     }
 
-    // VinylDeck 클래스 내부
+    detectBPM() {
+        const suffix = this.id.split('-')[1];
+        const bpmDisplay = document.getElementById(`bpm-viewr-${suffix}`);
+        const data = this.audioBuffer.getChannelData(0);
+        const sampleRate = this.audioBuffer.sampleRate;
+        
+        // 1. 단순 피크 검출보다 나은 에너지 기반 분석 (간략화)
+        let peaks = [];
+        const threshold = 0.8;
+        for (let i = 0; i < data.length; i += 1000) {
+            if (Math.abs(data[i]) > threshold) {
+                peaks.push(i / sampleRate); // 초 단위 저장
+            }
+        }
+
+        if (peaks.length > 1) {
+            let intervals = [];
+            for (let i = 1; i < peaks.length; i++) {
+                intervals.push(peaks[i] - peaks[i-1]);
+            }
+            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+            this.bpm = Math.round(60 / avgInterval);
+            
+            // 현실적인 범위 보정
+            while (this.bpm > 180) this.bpm /= 2;
+            while (this.bpm < 60) this.bpm *= 2;
+            this.bpm = Math.round(this.bpm);
+
+            // 비트 간격(초) 저장
+            this.beatInterval = 60 / this.bpm;
+            
+            if (bpmDisplay) bpmDisplay.textContent = `${this.bpm} BPM`;
+        }
+    }
     drawWaveform() {
         const suffix = this.id.split('-')[1];
         const container = document.getElementById(`audio-wave-viewer-${suffix}`);
@@ -151,6 +184,27 @@ class VinylDeck {
             if (sampleIdx >= 0 && sampleIdx < data.length) {
                 const datum = data[sampleIdx];
                 ctx.fillRect(i, amp - datum * amp, 1, datum * amp * 2 || 1);
+            }
+        }
+        
+        if (this.beatInterval) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // 연한 흰색 선
+            ctx.lineWidth = 1;
+            
+            // 현재 화면에 보이는 시간 범위 내의 비트들 계산
+            const viewDuration = this.config.viewDuration;
+            const startTime = this.currentPosition - (viewDuration * 0.25);
+            const endTime = startTime + viewDuration;
+
+            // 첫 번째 비트 시작점 찾기
+            let firstBeat = Math.ceil(startTime / this.beatInterval) * this.beatInterval;
+
+            for (let t = firstBeat; t < endTime; t += this.beatInterval) {
+                const x = ((t - startTime) / viewDuration) * canvas.width;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
             }
         }
 
