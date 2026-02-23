@@ -178,15 +178,23 @@ class VinylDeck {
         ctx.fillStyle = '#ff5722';
 
         for (let i = 0; i < canvas.width; i++) {
-            // 현재 재생 지점이 캔버스의 왼쪽에서 25% 지점에 오도록 오프셋 계산
             const sampleIdx = Math.floor(currentSample + (i - canvas.width * 0.25) * samplesPerPixel);
             
-            if (sampleIdx >= 0 && sampleIdx < data.length) {
-                const datum = data[sampleIdx];
-                ctx.fillRect(i, amp - datum * amp, 1, datum * amp * 2 || 1);
+            // 지지직거림을 방지하기 위해 해당 픽셀 구간의 최대 에너지를 계산
+            let maxAmp = 0;
+            const checkWindow = Math.max(1, Math.floor(samplesPerPixel)); 
+            for (let j = 0; j < checkWindow; j++) {
+                if (sampleIdx + j < data.length) {
+                    const val = Math.abs(data[sampleIdx + j]);
+                    if (val > maxAmp) maxAmp = val;
+                }
             }
+
+            // 계산된 maxAmp로 위아래 대칭형 막대를 그림
+            const lineHeight = maxAmp * amp * 1.5; // 1.5는 시각적 강조를 위한 배율
+            ctx.fillRect(i, amp - lineHeight / 2, 1, lineHeight || 1);
         }
-        
+
         if (this.beatInterval) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // 연한 흰색 선
             ctx.lineWidth = 1;
@@ -201,6 +209,19 @@ class VinylDeck {
 
             for (let t = firstBeat; t < endTime; t += this.beatInterval) {
                 const x = ((t - startTime) / viewDuration) * canvas.width;
+                
+                // 박자 수 계산 (현재 시간 / 비트 간격)
+                const beatNumber = Math.round(t / this.beatInterval);
+                
+                // 4박자(1마디)마다 더 진하게 표시
+                if (beatNumber % 4 === 0) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // 마디 선 (진함)
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; // 일반 박자 선 (연함)
+                    ctx.lineWidth = 1;
+                }
+                
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
