@@ -14,7 +14,8 @@ class VinylDeck {
             tempo_rate: 10,
             lp_sensitivity: 0.3,
             brake_force: 0.85,
-            friction: 0.95
+            friction: 0.95,
+            viewDuration: 1, //기본 1
         };
 
         this.initDOM();
@@ -117,32 +118,49 @@ class VinylDeck {
         this.playBuffer();
     }
 
+    // VinylDeck 클래스 내부
     drawWaveform() {
         const suffix = this.id.split('-')[1];
         const container = document.getElementById(`audio-wave-viewer-${suffix}`);
-        if (!container) return;
+        if (!container || !this.audioBuffer) return;
 
-        // 캔버스 생성 및 초기화
-        container.innerHTML = '<canvas></canvas>';
-        const canvas = container.querySelector('canvas');
+        let canvas = container.querySelector('canvas');
+        if (!canvas) {
+            container.innerHTML = '<canvas></canvas>';
+            canvas = container.querySelector('canvas');
+        }
         const ctx = canvas.getContext('2d');
         canvas.width = container.offsetWidth;
         canvas.height = container.offsetHeight;
 
         const data = this.audioBuffer.getChannelData(0);
-        const step = Math.ceil(data.length / canvas.width);
+        const sampleRate = this.audioBuffer.sampleRate;
         const amp = canvas.height / 2;
 
-        ctx.fillStyle = '#ff5722'; // 엑센트 컬러 적용
+        // 설정값: 화면에 보여줄 시간 폭 (초 단위, 숫자가 작을수록 확대됨)
+        const currentSample = this.currentPosition * sampleRate;
+        const samplesPerPixel = (this.config.viewDuration * sampleRate) / canvas.width;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff5722';
+
         for (let i = 0; i < canvas.width; i++) {
-            let min = 1.0, max = -1.0;
-            for (let j = 0; j < step; j++) {
-                const datum = data[i * step + j];
-                if (datum < min) min = datum;
-                if (datum > max) max = datum;
+            // 현재 재생 지점이 캔버스의 왼쪽에서 25% 지점에 오도록 오프셋 계산
+            const sampleIdx = Math.floor(currentSample + (i - canvas.width * 0.25) * samplesPerPixel);
+            
+            if (sampleIdx >= 0 && sampleIdx < data.length) {
+                const datum = data[sampleIdx];
+                ctx.fillRect(i, amp - datum * amp, 1, datum * amp * 2 || 1);
             }
-            ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
         }
+
+        // 현재 재생 시점을 나타내는 수직선 가이드
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * 0.25, 0);
+        ctx.lineTo(canvas.width * 0.25, canvas.height);
+        ctx.stroke();
     }
 
     // [기능 2] BPM 분석 로직 (Peak Detection 방식)
@@ -240,8 +258,11 @@ class VinylDeck {
         const progress = (this.currentPosition / this.audioBuffer.duration) * 100;
         this.progressSlider.value = progress;
         this.currentTimeText.textContent = this.formatTime(this.currentPosition);
+        this.drawWaveform();
 
         requestAnimationFrame(() => this.updateUI());
+
+        
     }
 
     renderVinyl(speed, deltaTime) {
