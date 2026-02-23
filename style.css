@@ -5,10 +5,10 @@
     --text: #eceff1;
 }
 
-div{
-    /* TODO :  테스트용 css 후에 삭제 필수 */
+/* TODO :  테스트용 css 후에 삭제 필수 */
+/* div{
     outline : 3px red solid;
-}
+} */
 
 body {
     background-color: #1a1a1a;
