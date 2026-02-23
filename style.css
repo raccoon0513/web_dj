@@ -171,3 +171,18 @@ input[type="range"] {
     cursor: pointer;
     font-weight: bold;
 }
+
+/* 파형 뷰어 내부 캔버스 정렬 */
+.audio-wave-viewer canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.audio-wave-viewer {
+    background: #000;
+    height: 80px; /* 적절한 높이 부여 */
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}

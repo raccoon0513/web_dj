@@ -107,8 +107,72 @@ class VinylDeck {
         await this.initAudio();
         const arrayBuffer = await file.arrayBuffer();
         this.audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+        
+        // 1. 파형 그리기 실행
+        this.drawWaveform();
+        // 2. BPM 분석 실행
+        this.detectBPM();
+
         this.createReversedBuffer();
         this.playBuffer();
+    }
+
+    drawWaveform() {
+        const suffix = this.id.split('-')[1];
+        const container = document.getElementById(`audio-wave-viewer-${suffix}`);
+        if (!container) return;
+
+        // 캔버스 생성 및 초기화
+        container.innerHTML = '<canvas></canvas>';
+        const canvas = container.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+
+        const data = this.audioBuffer.getChannelData(0);
+        const step = Math.ceil(data.length / canvas.width);
+        const amp = canvas.height / 2;
+
+        ctx.fillStyle = '#ff5722'; // 엑센트 컬러 적용
+        for (let i = 0; i < canvas.width; i++) {
+            let min = 1.0, max = -1.0;
+            for (let j = 0; j < step; j++) {
+                const datum = data[i * step + j];
+                if (datum < min) min = datum;
+                if (datum > max) max = datum;
+            }
+            ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+        }
+    }
+
+    // [기능 2] BPM 분석 로직 (Peak Detection 방식)
+    detectBPM() {
+        const suffix = this.id.split('-')[1];
+        const bpmDisplay = document.getElementById(`bpm-viewr-${suffix}`);
+        const data = this.audioBuffer.getChannelData(0);
+        const sampleRate = this.audioBuffer.sampleRate;
+        
+        let peaks = [];
+        const threshold = 0.8; 
+        // 전체 데이터를 훑으며 피크 지점 추출
+        for (let i = 0; i < data.length; i += 1000) {
+            if (data[i] > threshold) peaks.push(i);
+        }
+
+        if (peaks.length > 1) {
+            const intervals = [];
+            for (let i = 1; i < peaks.length; i++) {
+                intervals.push(peaks[i] - peaks[i-1]);
+            }
+            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+            let bpm = Math.round(60 / (avgInterval / sampleRate));
+            
+            // 현실적인 DJ 음원 범위(60~180)로 보정
+            while (bpm > 180) bpm /= 2;
+            while (bpm < 60) bpm *= 2;
+            
+            if (bpmDisplay) bpmDisplay.textContent = `${Math.round(bpm)} BPM`;
+        }
     }
 
     createReversedBuffer() {
