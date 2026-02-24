@@ -109,6 +109,16 @@ class VinylDeck {
 
     async handleFile(file) {
         if (!file) return;
+
+        // 파일 이름에서 BPM 추출 시도
+        const extractedBPM = this.extractBPMFromFileName(file.name);
+        if (extractedBPM) {
+            this.updateBPM(extractedBPM);
+        } else {
+            // 포맷이 다를 경우 기본 BPM(예: 120) 사용
+            this.updateBPM(120); 
+        }
+
         await this.initAudio();
         const arrayBuffer = await file.arrayBuffer();
         this.audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
@@ -118,6 +128,19 @@ class VinylDeck {
 
         this.createReversedBuffer();
         this.playBuffer();
+    }
+    extractBPMFromFileName(fileName) {
+        // 확장자를 제외한 파일 이름 추출
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        
+        // 이름 끝이 '숫자bpm'으로 끝나는지 확인하는 정규표현식
+        // 예: "노래제목 80bpm" -> 80 추출
+        const match = nameWithoutExt.match(/(\d+)bpm$/i);
+        
+        if (match && match[1]) {
+            return parseInt(match[1], 10);
+        }
+        return null;
     }
     
     // 사용자가 입력한 BPM으로 업데이트
