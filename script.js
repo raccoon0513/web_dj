@@ -42,6 +42,7 @@ class VinylDeck {
         this.lowSlider = document.getElementById(`low-${suffix}`);
         this.midSlider = document.getElementById(`mid-${suffix}`);
         this.highSlider = document.getElementById(`high-${suffix}`);
+        this.bpmInput = document.getElementById(`bpm-input-${suffix}`)
     }
 
     initEvents() {
@@ -114,6 +115,7 @@ class VinylDeck {
         const extractedBPM = this.extractBPMFromFileName(file.name);
         if (extractedBPM) {
             this.updateBPM(extractedBPM);
+            this.bpmInput.value = extractedBPM;
         } else {
             // 포맷이 다를 경우 기본 BPM(예: 120) 사용
             this.updateBPM(120); 

@@ -62,7 +62,7 @@
         <div class="deck" id="multi-deck">
             <div class="audio-wave-container">
                 <div class="control-row">
-                    <input type="number" step="0.1" value="120" onchange="deckA.updateBPM(this.value)">
+                    <input type="bpm-input" id="bpm-input-a" step="0.1" value="120" onchange="deckA.updateBPM(this.value)">
                     <button onclick="deckA.adjustOffset(-0.01)">←</button>
                     <button onclick="deckA.adjustOffset(0.01)">→</button>
                     <button class="sync-toggle-btn" onclick="deckA.syncWith(deckB)">sync</button>
@@ -71,7 +71,7 @@
                 <div class="audio-wave-viewer" id="audio-wave-viewer-a"></div>
 
                 <div class="control-row">
-                    <input type="number" step="0.1" value="120" onchange="deckB.updateBPM(this.value)">
+                    <input type="bpm-input" id="bpm-input-b" step="0.1" value="120" onchange="deckB.updateBPM(this.value)">
                     <button onclick="deckB.adjustOffset(-0.01)">←</button>
                     <button onclick="deckB.adjustOffset(0.01)">→</button>
                     <button class="sync-toggle-btn" onclick="deckB.syncWith(deckA)">sync</button>
