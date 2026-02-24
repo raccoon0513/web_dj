@@ -9,7 +9,11 @@ class VinylDeck {
         this.isDragging = false;
         this.dragVelocity = 0;
         this.brakeVelocity = 0;
-        
+
+        this.bpm = 120; // 기본값 설정
+        this.beatOffset = 0; // 박자 그리드 시작점 보정값
+        this.beatInterval = 60 / 120;
+
         this.config = {
             tempo_rate: 10,
             lp_sensitivity: 0.3,
@@ -116,7 +120,27 @@ class VinylDeck {
         this.playBuffer();
     }
     
-    
+    // 사용자가 입력한 BPM으로 업데이트
+    updateBPM(value) {
+        this.bpm = parseFloat(value) || 120;
+        this.beatInterval = 60 / this.bpm;
+        const suffix = this.id.split('-')[1];
+        const display = document.getElementById(`bpm-viewr-${suffix}`);
+        if (display) display.textContent = `${this.bpm} BPM`;
+    }
+
+    // 그리드 좌우 밀기 조절
+    adjustOffset(amount) {
+        this.beatOffset += amount;
+    }
+
+    // 싱크 버튼 로직: 상대 데크의 BPM을 가져와 내 데크에 적용
+    syncWith(otherDeck) {
+        if (!otherDeck || !otherDeck.bpm) return;
+        this.updateBPM(otherDeck.bpm);
+        // 슬라이더 위치도 자동으로 맞춰주면 좋습니다.
+        this.speedSlider.value = 1.0; 
+    }
     drawWaveform() {
         const suffix = this.id.split('-')[1];
         const container = document.getElementById(`audio-wave-viewer-${suffix}`);
@@ -170,7 +194,7 @@ class VinylDeck {
             const endTime = startTime + viewDuration;
 
             // 첫 번째 비트 시작점 찾기
-            let firstBeat = Math.ceil(startTime / this.beatInterval) * this.beatInterval;
+            let firstBeat = Math.ceil((startTime - this.beatOffset) / this.beatInterval) * this.beatInterval + this.beatOffset;
 
             for (let t = firstBeat; t < endTime; t += this.beatInterval) {
                 const x = ((t - startTime) / viewDuration) * canvas.width;
@@ -312,6 +336,8 @@ class VinylDeck {
         const s = Math.floor(Math.max(0, sec) % 60);
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
+
+    
 }
 
 const deckA = new VinylDeck('deck-a');
