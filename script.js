@@ -27,6 +27,7 @@ class VinylDeck {
         this.initEvents();
     }
     initDOM() {
+        // 이제 id 대신 클래스로만 요소를 가져옵니다.
         this.vinyl = this.container.querySelector('.vinyl');
         this.speedSlider = this.container.querySelector('.speedSlider');
         this.speedValue = this.container.querySelector('.speedValue');
@@ -35,14 +36,19 @@ class VinylDeck {
         this.progressSlider = this.container.querySelector('.progressSlider');
         this.currentTimeText = this.container.querySelector('.currentTime');
         this.durationText = this.container.querySelector('.duration');
+        
+        // 추가될 버튼들
+        this.playBtn = this.container.querySelector('.play-btn');
+        this.stopBtn = this.container.querySelector('.stop-btn');
+        this.reverseBtn = this.container.querySelector('.reverse-btn');
 
-        const suffix = this.id.split('-')[1]; // 'a' 또는 'b'
-    
-        this.volSlider = document.getElementById(`vol-${suffix}`);
-        this.lowSlider = document.getElementById(`low-${suffix}`);
-        this.midSlider = document.getElementById(`mid-${suffix}`);
-        this.highSlider = document.getElementById(`high-${suffix}`);
-        this.bpmInput = document.getElementById(`bpm-input-${suffix}`)
+        // EQ 및 볼륨 슬라이더도 부모 컨테이너 내부에서 찾도록 변경 가능합니다.
+        this.volSlider = this.container.querySelector('.vol-slider');
+        this.lowSlider = this.container.querySelector('.low-slider');
+        this.midSlider = this.container.querySelector('.mid-slider');
+        this.highSlider = this.container.querySelector('.high-slider');
+        
+        // 중앙 정보창(BPM)은 별도 영역에 있으므로 기존 유지 혹은 구조 변경이 필요할 수 있습니다.
     }
 
     initEvents() {
@@ -55,6 +61,31 @@ class VinylDeck {
 
         this.speedSlider.oninput = () => {
             this.speedValue.textContent = parseFloat(this.speedSlider.value).toFixed(3);
+        };
+
+        this.playBtn.onclick = () => {
+            if (!this.audioBuffer) return;
+            if (!this.isPlaying) {
+                // 노래가 끝까지 갔다면 처음(0)으로 되돌림
+                if (this.currentPosition >= this.audioBuffer.duration) {
+                    this.currentPosition = 0;
+                }
+                this.playBuffer();
+            }
+        };
+
+        // 4단계: 정지 버튼
+        this.stopBtn.onclick = () => {
+            this.isPlaying = false;
+            if (this.sourceNode) this.sourceNode.stop();
+        };
+
+        // 4단계: 역재생 버튼
+        this.reverseBtn.onclick = () => {
+            if (!this.audioBuffer) return;
+            this.speedSlider.value = -1.0;
+            this.speedValue.textContent = "-1.000";
+            this.playBuffer(); // 자동으로 reversedBuffer 사용
         };
     }
 
@@ -300,6 +331,14 @@ class VinylDeck {
 
         this.currentPosition += deltaTime * effectiveSpeed;
         this.renderVinyl(effectiveSpeed, deltaTime);
+
+        if (this.currentPosition >= this.audioBuffer.duration || this.currentPosition < 0) {
+            this.isPlaying = false;
+            if (this.sourceNode) this.sourceNode.stop();
+            this.currentPosition = Math.max(0, Math.min(this.currentPosition, this.audioBuffer.duration));
+            this.drawWaveform();
+            return; 
+        }
 
         if (this.sourceNode) {
             this.sourceNode.playbackRate.value = Math.max(0.001, Math.abs(effectiveSpeed));
