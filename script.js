@@ -111,47 +111,12 @@ class VinylDeck {
         
         // 1. 파형 그리기 실행
         this.drawWaveform();
-        // 2. BPM 분석 실행
-        this.detectBPM();
 
         this.createReversedBuffer();
         this.playBuffer();
     }
-
-    detectBPM() {
-        const suffix = this.id.split('-')[1];
-        const bpmDisplay = document.getElementById(`bpm-viewr-${suffix}`);
-        const data = this.audioBuffer.getChannelData(0);
-        const sampleRate = this.audioBuffer.sampleRate;
-        
-        // 1. 단순 피크 검출보다 나은 에너지 기반 분석 (간략화)
-        let peaks = [];
-        const threshold = 0.8;
-        for (let i = 0; i < data.length; i += 1000) {
-            if (Math.abs(data[i]) > threshold) {
-                peaks.push(i / sampleRate); // 초 단위 저장
-            }
-        }
-
-        if (peaks.length > 1) {
-            let intervals = [];
-            for (let i = 1; i < peaks.length; i++) {
-                intervals.push(peaks[i] - peaks[i-1]);
-            }
-            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
-            this.bpm = Math.round(60 / avgInterval);
-            
-            // 현실적인 범위 보정
-            while (this.bpm > 180) this.bpm /= 2;
-            while (this.bpm < 60) this.bpm *= 2;
-            this.bpm = Math.round(this.bpm);
-
-            // 비트 간격(초) 저장
-            this.beatInterval = 60 / this.bpm;
-            
-            if (bpmDisplay) bpmDisplay.textContent = `${this.bpm} BPM`;
-        }
-    }
+    
+    
     drawWaveform() {
         const suffix = this.id.split('-')[1];
         const container = document.getElementById(`audio-wave-viewer-${suffix}`);
@@ -238,35 +203,7 @@ class VinylDeck {
         ctx.stroke();
     }
 
-    // [기능 2] BPM 분석 로직 (Peak Detection 방식)
-    detectBPM() {
-        const suffix = this.id.split('-')[1];
-        const bpmDisplay = document.getElementById(`bpm-viewr-${suffix}`);
-        const data = this.audioBuffer.getChannelData(0);
-        const sampleRate = this.audioBuffer.sampleRate;
-        
-        let peaks = [];
-        const threshold = 0.8; 
-        // 전체 데이터를 훑으며 피크 지점 추출
-        for (let i = 0; i < data.length; i += 1000) {
-            if (data[i] > threshold) peaks.push(i);
-        }
-
-        if (peaks.length > 1) {
-            const intervals = [];
-            for (let i = 1; i < peaks.length; i++) {
-                intervals.push(peaks[i] - peaks[i-1]);
-            }
-            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
-            let bpm = Math.round(60 / (avgInterval / sampleRate));
-            
-            // 현실적인 DJ 음원 범위(60~180)로 보정
-            while (bpm > 180) bpm /= 2;
-            while (bpm < 60) bpm *= 2;
-            
-            if (bpmDisplay) bpmDisplay.textContent = `${Math.round(bpm)} BPM`;
-        }
-    }
+    
 
     createReversedBuffer() {
         this.reversedBuffer = this.audioCtx.createBuffer(
@@ -396,3 +333,4 @@ crossfader.oninput = (e) => {
         deckB.gainNode.gain.setTargetAtTime(value, deckB.audioCtx.currentTime, 0.02);
     }
 };
+
