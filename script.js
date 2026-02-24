@@ -9,9 +9,10 @@ class VinylDeck {
         this.isDragging = false;
         this.dragVelocity = 0;
         this.brakeVelocity = 0;
-
-        this.bpm = 120; // 기본값 설정
-        this.beatOffset = 0; // 박자 그리드 시작점 보정값
+        
+        // 추가: 수동 보정을 위한 기본값
+        this.bpm = 120;
+        this.beatOffset = 0; 
         this.beatInterval = 60 / 120;
 
         this.config = {
@@ -19,13 +20,12 @@ class VinylDeck {
             lp_sensitivity: 0.3,
             brake_force: 0.85,
             friction: 0.95,
-            viewDuration: 1, //기본 1
+            viewDuration: 1,
         };
 
         this.initDOM();
         this.initEvents();
     }
-
     initDOM() {
         this.vinyl = this.container.querySelector('.vinyl');
         this.speedSlider = this.container.querySelector('.speedSlider');
@@ -158,18 +158,15 @@ class VinylDeck {
         const data = this.audioBuffer.getChannelData(0);
         const sampleRate = this.audioBuffer.sampleRate;
         const amp = canvas.height / 2;
-
-        // 설정값: 화면에 보여줄 시간 폭 (초 단위, 숫자가 작을수록 확대됨)
         const currentSample = this.currentPosition * sampleRate;
         const samplesPerPixel = (this.config.viewDuration * sampleRate) / canvas.width;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 1. 파형 그리기
         ctx.fillStyle = '#ff5722';
-
         for (let i = 0; i < canvas.width; i++) {
             const sampleIdx = Math.floor(currentSample + (i - canvas.width * 0.25) * samplesPerPixel);
-            
-            // 지지직거림을 방지하기 위해 해당 픽셀 구간의 최대 에너지를 계산
             let maxAmp = 0;
             const checkWindow = Math.max(1, Math.floor(samplesPerPixel)); 
             for (let j = 0; j < checkWindow; j++) {
@@ -178,36 +175,29 @@ class VinylDeck {
                     if (val > maxAmp) maxAmp = val;
                 }
             }
-
-            // 계산된 maxAmp로 위아래 대칭형 막대를 그림
-            const lineHeight = maxAmp * amp * 1.5; // 1.5는 시각적 강조를 위한 배율
+            const lineHeight = maxAmp * amp * 1.5;
             ctx.fillRect(i, amp - lineHeight / 2, 1, lineHeight || 1);
         }
 
+        // 2. 박자 그리드 (수정된 로직)
         if (this.beatInterval) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // 연한 흰색 선
-            ctx.lineWidth = 1;
-            
-            // 현재 화면에 보이는 시간 범위 내의 비트들 계산
+            ctx.save(); // 투명도 간섭을 막기 위해 상태 저장
             const viewDuration = this.config.viewDuration;
             const startTime = this.currentPosition - (viewDuration * 0.25);
             const endTime = startTime + viewDuration;
 
-            // 첫 번째 비트 시작점 찾기
+            // beatOffset 반영
             let firstBeat = Math.ceil((startTime - this.beatOffset) / this.beatInterval) * this.beatInterval + this.beatOffset;
 
             for (let t = firstBeat; t < endTime; t += this.beatInterval) {
                 const x = ((t - startTime) / viewDuration) * canvas.width;
+                const beatNumber = Math.round((t - this.beatOffset) / this.beatInterval);
                 
-                // 박자 수 계산 (현재 시간 / 비트 간격)
-                const beatNumber = Math.round(t / this.beatInterval);
-                
-                // 4박자(1마디)마다 더 진하게 표시
                 if (beatNumber % 4 === 0) {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // 마디 선 (진함)
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; // 마디 선
                     ctx.lineWidth = 2;
                 } else {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; // 일반 박자 선 (연함)
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // 박자 선
                     ctx.lineWidth = 1;
                 }
                 
@@ -216,9 +206,10 @@ class VinylDeck {
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
+            ctx.restore(); // 상태 복구
         }
 
-        // 현재 재생 시점을 나타내는 수직선 가이드
+        // 3. 재생 지점 가이드
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.beginPath();
