@@ -325,6 +325,7 @@ class VinylDeck {
     }
 
     updateUI() {
+        // todo
         if (!this.isPlaying) return;
 
         let baseSpeed = parseFloat(this.speedSlider.value);
