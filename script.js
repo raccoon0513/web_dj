@@ -3,6 +3,7 @@ class VinylDeck {
         this.id = id;
         this.container = document.getElementById(id);
         this.isPlaying = false;
+        this.reverse = false;
         this.currentPosition = 0;
         this.lastUpdateTime = 0;
         this.currentAngle = 0;
@@ -48,7 +49,8 @@ class VinylDeck {
         this.midSlider = this.container.querySelector('.mid-slider');
         this.highSlider = this.container.querySelector('.high-slider');
         
-        // 중앙 정보창(BPM)은 별도 영역에 있으므로 기존 유지 혹은 구조 변경이 필요할 수 있습니다.
+        const suffix = this.id.split('-')[1];
+        this.bpmInput = document.getElementById(`bpm-input-${suffix}`);
     }
 
     initEvents() {
@@ -65,8 +67,16 @@ class VinylDeck {
 
         this.playBtn.onclick = () => {
             if (!this.audioBuffer) return;
+            
+            // reverse가 true일 때 재생을 누르면 정방향으로 전환
+            if (this.reverse) {
+                this.reverse = false;
+                const currentVal = parseFloat(this.speedSlider.value);
+                this.speedSlider.value = currentVal * -1; // 배속에 -1 곱하기
+                this.speedValue.textContent = (currentVal * -1).toFixed(3);
+            }
+
             if (!this.isPlaying) {
-                // 노래가 끝까지 갔다면 처음(0)으로 되돌림
                 if (this.currentPosition >= this.audioBuffer.duration) {
                     this.currentPosition = 0;
                 }
@@ -74,18 +84,29 @@ class VinylDeck {
             }
         };
 
-        // 4단계: 정지 버튼
-        this.stopBtn.onclick = () => {
-            this.isPlaying = false;
-            if (this.sourceNode) this.sourceNode.stop();
-        };
-
-        // 4단계: 역재생 버튼
+        // [수정 1] REV 버튼 로직 개선
         this.reverseBtn.onclick = () => {
             if (!this.audioBuffer) return;
-            this.speedSlider.value = -1.0;
-            this.speedValue.textContent = "-1.000";
-            this.playBuffer(); // 자동으로 reversedBuffer 사용
+            
+            // 이미 reverse가 true라면 동작하지 않음
+            if (this.reverse) return;
+
+            this.reverse = true;
+            const currentVal = parseFloat(this.speedSlider.value);
+            const nextVal = currentVal * -1; // 현재 속도에 -1 곱하기
+            
+            this.speedSlider.value = nextVal;
+            this.speedValue.textContent = nextVal.toFixed(3);
+            
+            // 재생 중이 아니었다면 재생 시작, 중이었다면 버퍼 교체를 위해 다시 호출
+            this.playBuffer(); 
+        };
+
+        // 정지 시 reverse 상태 초기화 (선택 사항)
+        this.stopBtn.onclick = () => {
+            this.isPlaying = false;
+            this.reverse = false; // 정지하면 다시 정방향 준비
+            if (this.sourceNode) this.sourceNode.stop();
         };
     }
 
