@@ -325,7 +325,6 @@ class VinylDeck {
     }
 
     updateUI() {
-        // todo
         if (!this.isPlaying) return;
 
         let baseSpeed = parseFloat(this.speedSlider.value);
@@ -335,7 +334,14 @@ class VinylDeck {
             this.brakeVelocity *= this.config.brake_force;
             effectiveSpeed = this.brakeVelocity + this.dragVelocity;
         } else {
+            // 마찰력 적용
             this.dragVelocity *= this.config.friction;
+
+            // [추가] 속도가 0.001보다 작아지면 강제로 0으로 변경하여 관성 잔류 버그 해결
+            if (Math.abs(this.dragVelocity) < 0.001) {
+                this.dragVelocity = 0;
+            }
+
             effectiveSpeed = baseSpeed + this.dragVelocity;
         }
 
