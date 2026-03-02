@@ -73,8 +73,8 @@ body {
     aspect-ratio: 1 / 1;
     background-image: url(./turntable_without_tonearm.png);
     background-position: center;
-    background-size: cover;
-    border-radius: 50%;
+    background-size: 125%;
+    border-radius: 20%;
     display: flex;
     justify-content: center;
     align-items: center;
