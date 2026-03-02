@@ -186,3 +186,9 @@ input[type="range"] {
     margin-bottom: 10px;
     overflow: hidden;
 }
+
+.bar-edit-btn.active {
+    color: white;
+    font-weight: bold;
+    border: 2px solid white;
+}

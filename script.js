@@ -51,6 +51,10 @@ class VinylDeck {
         
         const suffix = this.id.split('-')[1];
         this.bpmInput = document.getElementById(`bpm-input-${suffix}`);
+
+        this.barEditBtn = this.container.querySelector('.bar-edit-btn');
+        this.waveContainer = this.container.querySelector('.audio-wave-viewer');
+        this.isBarEditing = false; // 편집 모드 상태 변수
     }
 
     initEvents() {
@@ -107,6 +111,35 @@ class VinylDeck {
             this.isPlaying = false;
             this.reverse = false; // 정지하면 다시 정방향 준비
             if (this.sourceNode) this.sourceNode.stop();
+        };
+
+        this.barEditBtn.onclick = () => {
+            this.isBarEditing = !this.isBarEditing;
+            this.barEditBtn.classList.toggle('active', this.isBarEditing);
+            this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : ''; // 활성화 시 색상 변경
+            this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
+        };
+        this.waveContainer.onclick = (e) => {
+            if (!this.isBarEditing || !this.audioBuffer) return;
+
+            const rect = this.waveContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left; // 클릭한 X 좌표
+            const width = rect.width;
+
+            // 현재 파형 뷰의 시간 계산 로직 역산
+            const viewDuration = this.config.viewDuration;
+            const startTime = this.currentPosition - (viewDuration * 0.25);
+            
+            // 클릭한 지점의 실제 노래 시간(초) 계산
+            const clickedTime = startTime + (x / width) * viewDuration;
+
+            // 클릭한 지점을 새로운 비트의 시작점(Offset)으로 설정
+            // (clickedTime - n * beatInterval = beatOffset)
+            // 가장 가까운 마디로 맞추기 위해 현재 시간을 beatInterval로 나눈 나머지를 오프셋으로 활용
+            this.beatOffset = clickedTime % this.beatInterval;
+            
+            // 즉시 파형 다시 그리기
+            this.drawWaveform();
         };
     }
 
