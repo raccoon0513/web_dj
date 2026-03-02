@@ -331,17 +331,21 @@ class VinylDeck {
         let effectiveSpeed;
 
         if (this.isDragging) {
-            this.brakeVelocity *= this.config.brake_force;
-            effectiveSpeed = this.brakeVelocity + this.dragVelocity;
-        } else {
-            // 마찰력 적용
-            this.dragVelocity *= this.config.friction;
-
-            // [추가] 속도가 0.001보다 작아지면 강제로 0으로 변경하여 관성 잔류 버그 해결
-            if (Math.abs(this.dragVelocity) < 0.001) {
+            // [중요] 마우스를 잡고 있는데 움직임이 멈췄다면(50ms 이상) 속도를 0으로 강제
+            if (performance.now() - this.lastMouseMoveTime > 50) {
                 this.dragVelocity = 0;
             }
 
+            this.brakeVelocity *= this.config.brake_force;
+            // 드래그 중에는 오직 (감속중인 베이스 + 현재 손속도)만 반영
+            effectiveSpeed = this.brakeVelocity + this.dragVelocity;
+        } else {
+            // 릴리스 상태: 여기서만 마찰력을 적용하며 관성(dragVelocity)을 유지
+            this.dragVelocity *= this.config.friction;
+            
+            // 임계값 처리 (멈춤)
+            if (Math.abs(this.dragVelocity) < 0.001) this.dragVelocity = 0;
+            
             effectiveSpeed = baseSpeed + this.dragVelocity;
         }
 
@@ -393,7 +397,12 @@ class VinylDeck {
     startDragging(e) {
         if (!this.isPlaying) return;
         this.isDragging = true;
-        this.brakeVelocity = parseFloat(this.speedSlider.value) + this.dragVelocity;
+        
+        // 잡는 순간 모든 관성치를 0으로 초기화
+        this.dragVelocity = 0;
+        this.currentDelta = 0; 
+        
+        this.brakeVelocity = parseFloat(this.speedSlider.value);
         const rect = this.vinyl.getBoundingClientRect();
         this.centerX = rect.left + rect.width / 2;
         this.centerY = rect.top + rect.height / 2;
@@ -402,14 +411,20 @@ class VinylDeck {
 
     drag(e) {
         if (!this.isDragging) return;
+        
         const currentMouseAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
         let delta = currentMouseAngle - this.lastAngle;
+        
         if (delta > 180) delta -= 360;
         else if (delta < -180) delta += 360;
-        this.dragVelocity = delta * this.config.lp_sensitivity;
-        this.lastAngle = currentMouseAngle;
-    }
 
+        // 현재의 움직임(delta)만 속도로 반영하고, 이전 관성과 합쳐지지 않게 함
+        this.dragVelocity = delta * this.config.lp_sensitivity;
+        
+        this.lastAngle = currentMouseAngle;
+        // 마우스가 움직이고 있음을 알림
+        this.lastMouseMoveTime = performance.now(); 
+    }
     stopDragging() {
         this.isDragging = false;
     }
