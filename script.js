@@ -28,33 +28,26 @@ class VinylDeck {
         this.initEvents();
     }
     initDOM() {
-        // 이제 id 대신 클래스로만 요소를 가져옵니다.
         this.vinyl = this.container.querySelector('.vinyl');
         this.speedSlider = this.container.querySelector('.speedSlider');
         this.speedValue = this.container.querySelector('.speedValue');
-        this.fileInput = this.container.querySelector('.fileInput');
-        this.uploadBtn = this.container.querySelector('.uploadBtn');
-        this.progressSlider = this.container.querySelector('.progressSlider');
-        this.currentTimeText = this.container.querySelector('.currentTime');
-        this.durationText = this.container.querySelector('.duration');
-        
-        // 추가될 버튼들
         this.playBtn = this.container.querySelector('.play-btn');
         this.stopBtn = this.container.querySelector('.stop-btn');
         this.reverseBtn = this.container.querySelector('.reverse-btn');
 
-        // EQ 및 볼륨 슬라이더도 부모 컨테이너 내부에서 찾도록 변경 가능합니다.
-        this.volSlider = this.container.querySelector('.vol-slider');
-        this.lowSlider = this.container.querySelector('.low-slider');
-        this.midSlider = this.container.querySelector('.mid-slider');
-        this.highSlider = this.container.querySelector('.high-slider');
+        // 2. 중앙 멀티덱 영역 요소들 (id="multi-deck-container-a/b" 내부)
+        const suffix = this.id.split('-')[1]; // 'a' 또는 'b'
+        const multiContainer = document.getElementById(`multi-deck-container-${suffix}`);
         
-        const suffix = this.id.split('-')[1];
-        this.bpmInput = document.getElementById(`bpm-input-${suffix}`);
+        if (multiContainer) {
+            this.waveContainer = multiContainer.querySelector('.audio-wave-viewer');
+            this.barEditBtn = multiContainer.querySelector('.bar-edit-btn');
+            this.bpmInput = multiContainer.querySelector('.bpm-input');
+            this.bpmDisplay = multiContainer.querySelector('.bpm-viewr');
+            this.syncBtn = multiContainer.querySelector('.sync-toggle-btn');
+        }
 
-        this.barEditBtn = this.container.querySelector('.bar-edit-btn');
-        this.waveContainer = this.container.querySelector('.audio-wave-viewer');
-        this.isBarEditing = false; // 편집 모드 상태 변수
+        this.isBarEditing = false;
     }
 
     initEvents() {
@@ -141,6 +134,41 @@ class VinylDeck {
             // 즉시 파형 다시 그리기
             this.drawWaveform();
         };
+        if (this.barEditBtn && this.waveContainer) {
+            this.barEditBtn.onclick = () => {
+                this.isBarEditing = !this.isBarEditing;
+                this.barEditBtn.classList.toggle('active', this.isBarEditing);
+                this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
+                this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
+            };
+
+            this.waveContainer.onclick = (e) => {
+                if (!this.isBarEditing || !this.audioBuffer) return;
+
+                const rect = this.waveContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const width = rect.width;
+
+                const viewDuration = this.config.viewDuration;
+                const startTime = this.currentPosition - (viewDuration * 0.25);
+                const clickedTime = startTime + (x / width) * viewDuration;
+
+                // 클릭 지점을 기준으로 비트 오프셋 계산 및 적용
+                this.beatOffset = clickedTime % this.beatInterval;
+                this.drawWaveform();
+            };
+        }
+        
+        // BPM 입력 및 싱크 버튼 이벤트도 여기서 연결 가능합니다.
+        if (this.bpmInput) {
+            this.bpmInput.onchange = (e) => this.updateBPM(e.target.value);
+        }
+        if (this.syncBtn) {
+            this.syncBtn.onclick = () => {
+                const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
+                this.syncWith(otherDeck);
+            };
+        }
     }
 
     async initAudio() {
