@@ -55,7 +55,7 @@ class VinylDeck {
         this.bpmDisplay = this.multiContainer.querySelector('.bpm-viewr');
         this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
 
-        this.bpmInput = this,this.multiContainer.querySelector('.bpm-input')
+        this.bpmInput = this.multiContainer.querySelector('.bpm-input')
 
         // EQ 슬라이더 (ID 기반으로 더 확실하게 참조)
         this.volSlider = this.container.querySelector('.vol-slider');
