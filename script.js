@@ -1,7 +1,7 @@
 class VinylDeck {
-    constructor(id, multiId) {
+    constructor(id, multiId) { // multiId 추가
         this.id = id;
-        this.multiId = multiId;
+        this.multiId = multiId; // 추가
         this.container = document.getElementById(id);
         this.multiContainer = document.getElementById(multiId);
 
@@ -56,6 +56,14 @@ class VinylDeck {
             this.bpmDisplay = this.multiContainer.querySelector('.bpm-viewr');
             this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
         }
+
+        // [중요] suffix 정의 추가
+        const suffix = this.id.split('-')[1]; // 'deck-a'에서 'a'를 추출
+
+        this.bpmInput = document.getElementById(`bpm-input-${suffix}`);
+
+        // 만약 bpm-viewr 등 다른 요소를 찾을 때도 suffix가 쓰인다면 이 줄 아래에서 사용해야 합니다.
+        const display = document.getElementById(`bpm-viewr-${suffix}`);
 
         // EQ 슬라이더 (ID 기반으로 더 확실하게 참조)
         this.volSlider = document.getElementById(`vol-${suffix}`) || this.container.querySelector('.vol-slider');
@@ -161,6 +169,7 @@ class VinylDeck {
                     this.drawWaveform(); // 즉시 다시 그리기
                 };
             }
+
 
             // BPM 입력창 수동 변경
             if (this.bpmInput) {
