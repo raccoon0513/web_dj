@@ -242,13 +242,14 @@ class VinylDeck {
     async handleFile(file) {
         if (!file) return;
 
-        // 파일 이름에서 BPM 추출 시도
         const extractedBPM = this.extractBPMFromFileName(file.name);
         if (extractedBPM) {
             this.updateBPM(extractedBPM);
-            this.bpmInput.value = extractedBPM;
+            // [수정] bpmInput이 존재할 때만 value를 설정하도록 안전 장치 추가
+            if (this.bpmInput) {
+                this.bpmInput.value = extractedBPM;
+            }
         } else {
-            // 포맷이 다를 경우 기본 BPM(예: 120) 사용
             this.updateBPM(120); 
         }
 
