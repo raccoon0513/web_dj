@@ -285,7 +285,7 @@ class VinylDeck {
         if (!otherDeck || !otherDeck.bpm) return;
         this.updateBPM(otherDeck.bpm);
         // 슬라이더 위치도 자동으로 맞춰주면 좋습니다.
-        this.speedSlider.value = 1.0; 
+        this.speedSlider.value = otherDeck.bpm / this.bpm; 
     }
     drawWaveform() {
         // 1. 컨테이너나 오디오 데이터가 없으면 중단
