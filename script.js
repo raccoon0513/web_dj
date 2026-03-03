@@ -283,9 +283,8 @@ class VinylDeck {
     // 싱크 버튼 로직: 상대 데크의 BPM을 가져와 내 데크에 적용
     syncWith(otherDeck) {
         if (!otherDeck || !otherDeck.bpm) return;
-        this.updateBPM(otherDeck.bpm);
-        // 슬라이더 위치도 자동으로 맞춰주면 좋습니다.
         this.speedSlider.value = otherDeck.bpm / this.bpm; 
+        this.updateBPM(otherDeck.bpm);
     }
     drawWaveform() {
         // 1. 컨테이너나 오디오 데이터가 없으면 중단
