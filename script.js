@@ -1,7 +1,10 @@
 class VinylDeck {
-    constructor(id) {
+    constructor(id, multiId) {
         this.id = id;
+        this.multiId = multiId;
         this.container = document.getElementById(id);
+        this.multiContainer = document.getElementById(multiId);
+
         this.isPlaying = false;
         this.reverse = false;
         this.currentPosition = 0;
@@ -24,11 +27,14 @@ class VinylDeck {
             viewDuration: 1,
         };
 
+        this.isBarEditing = false;
+        this.beatOffset = 0;
+
         this.initDOM();
         this.initEvents();
     }
     initDOM() {
-        // 1. LP판 및 라이브러리 컨트롤 (원래 위치)
+        // 1. 기존 사이드 덱 요소들 (LP, 업로드 버튼 등)
         this.vinyl = this.container.querySelector('.vinyl');
         this.speedSlider = this.container.querySelector('.speedSlider');
         this.speedValue = this.container.querySelector('.speedValue');
@@ -41,164 +47,136 @@ class VinylDeck {
         this.stopBtn = this.container.querySelector('.stop-btn');
         this.reverseBtn = this.container.querySelector('.reverse-btn');
 
-        // 2. 중앙 멀티덱 영역 (새로운 위치)
-        const suffix = this.id.split('-')[1]; // 'a' 또는 'b'
-        const multiContainer = document.getElementById(`multi-deck-container-${suffix}`);
-        
-        if (multiContainer) {
-            this.waveContainer = multiContainer.querySelector('.audio-wave-viewer');
-            this.barEditBtn = multiContainer.querySelector('.bar-edit-btn');
-            this.bpmInput = multiContainer.querySelector('.bpm-input');
-            this.bpmDisplay = multiContainer.querySelector('.bpm-viewr');
-            this.syncBtn = multiContainer.querySelector('.sync-toggle-btn');
+        // 2. 멀티덱 영역 (파형, BPM, BarEdit 버튼 등)
+        // 이제 this.multiContainer 내부에서 찾습니다.
+        if (this.multiContainer) {
+            this.waveContainer = this.multiContainer.querySelector('.audio-wave-viewer');
+            this.barEditBtn = this.multiContainer.querySelector('.bar-edit-btn');
+            this.bpmInput = this.multiContainer.querySelector('.bpm-input');
+            this.bpmDisplay = this.multiContainer.querySelector('.bpm-viewr');
+            this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
         }
 
-        // 3. EQ 및 볼륨 (기본값 설정)
-        this.volSlider = this.container.querySelector('.vol-slider') || this.container.querySelector('.vertical-slider');
-        this.lowSlider = this.container.querySelector('.low-slider input') || document.getElementById(`low-${suffix}`);
-        this.midSlider = this.container.querySelector('.mid-slider input') || document.getElementById(`mid-${suffix}`);
-        this.highSlider = this.container.querySelector('.high-slider input') || document.getElementById(`high-${suffix}`);
+        // EQ 슬라이더 (ID 기반으로 더 확실하게 참조)
+        this.volSlider = document.getElementById(`vol-${suffix}`) || this.container.querySelector('.vol-slider');
+        this.lowSlider = document.getElementById(`low-${suffix}`);
+        this.midSlider = document.getElementById(`mid-${suffix}`);
+        this.highSlider = document.getElementById(`high-${suffix}`);
 
         this.isBarEditing = false;
     }
 
     initEvents() {
+        // --- 1. 사이드 덱 (this.container) 관련 이벤트 ---
+        
+        // 노래 업로드
         if (this.uploadBtn && this.fileInput) {
             this.uploadBtn.onclick = () => this.fileInput.click();
             this.fileInput.onchange = (e) => this.handleFile(e.target.files[0]);
         }
 
-        // BarEdit 및 파형 클릭 로직
-        if (this.barEditBtn && this.waveContainer) {
-            this.barEditBtn.onclick = () => {
-                this.isBarEditing = !this.isBarEditing;
-                this.barEditBtn.classList.toggle('active', this.isBarEditing);
-                this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
-                this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
-            };
+        // LP판 드래그 (스크래치)
+        if (this.vinyl) {
+            this.vinyl.onmousedown = (e) => this.startDragging(e);
+            window.addEventListener('mousemove', (e) => this.drag(e));
+            window.addEventListener('mouseup', () => this.stopDragging());
+        }
 
-            this.waveContainer.onclick = (e) => {
-                if (!this.isBarEditing || !this.audioBuffer) return;
-                const rect = this.waveContainer.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const clickedTime = (this.currentPosition - (this.config.viewDuration * 0.25)) + (x / rect.width) * this.config.viewDuration;
-                this.beatOffset = clickedTime % this.beatInterval;
-                this.drawWaveform();
+        // 재생 속도 슬라이더
+        if (this.speedSlider) {
+            this.speedSlider.oninput = () => {
+                this.speedValue.textContent = parseFloat(this.speedSlider.value).toFixed(3);
             };
         }
 
-        // BPM 입력창 이벤트
-        if (this.bpmInput) {
-            this.bpmInput.onchange = (e) => this.updateBPM(e.target.value);
-        }
-
-        // 재생버튼
-        this.playBtn.onclick = () => {
-            if (!this.audioBuffer) return;
-            
-            // reverse가 true일 때 재생을 누르면 정방향으로 전환
-            if (this.reverse) {
-                this.reverse = false;
-                const currentVal = parseFloat(this.speedSlider.value);
-                this.speedSlider.value = currentVal * -1; // 배속에 -1 곱하기
-                this.speedValue.textContent = (currentVal * -1).toFixed(3);
-            }
-
-            if (!this.isPlaying) {
-                if (this.currentPosition >= this.audioBuffer.duration) {
-                    this.currentPosition = 0;
+        // 재생 버튼
+        if (this.playBtn) {
+            this.playBtn.onclick = () => {
+                if (!this.audioBuffer) return;
+                if (this.reverse) {
+                    this.reverse = false;
+                    const currentVal = parseFloat(this.speedSlider.value);
+                    this.speedSlider.value = currentVal * -1;
+                    this.speedValue.textContent = (currentVal * -1).toFixed(3);
                 }
-                this.playBuffer();
+                if (!this.isPlaying) {
+                    if (this.currentPosition >= this.audioBuffer.duration) this.currentPosition = 0;
+                    this.playBuffer();
+                }
+            };
+        }
+
+        // 역재생 버튼
+        if (this.reverseBtn) {
+            this.reverseBtn.onclick = () => {
+                if (!this.audioBuffer || this.reverse) return;
+                this.reverse = true;
+                const nextVal = parseFloat(this.speedSlider.value) * -1;
+                this.speedSlider.value = nextVal;
+                this.speedValue.textContent = nextVal.toFixed(3);
+                this.playBuffer(); 
+            };
+        }
+
+        // 정지 버튼
+        if (this.stopBtn) {
+            this.stopBtn.onclick = () => {
+                this.isPlaying = false;
+                this.reverse = false;
+                if (this.sourceNode) this.sourceNode.stop();
+            };
+        }
+
+        // --- 2. 중앙 멀티덱 (this.multiContainer) 관련 이벤트 ---
+
+        if (this.multiContainer) {
+            // BarEdit 모드 토글
+            if (this.barEditBtn) {
+                this.barEditBtn.onclick = () => {
+                    this.isBarEditing = !this.isBarEditing;
+                    this.barEditBtn.classList.toggle('active', this.isBarEditing);
+                    // 활성화 시 시각적 피드백 (CSS active 클래스가 있다면 스타일 생략 가능)
+                    this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
+                    if (this.waveContainer) {
+                        this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
+                    }
+                };
             }
-        };
 
-        // [수정 1] REV 버튼 로직 개선
-        this.reverseBtn.onclick = () => {
-            if (!this.audioBuffer) return;
-            
-            // 이미 reverse가 true라면 동작하지 않음
-            if (this.reverse) return;
+            // 파형 클릭 (비트 오프셋 보정)
+            if (this.waveContainer) {
+                this.waveContainer.onclick = (e) => {
+                    if (!this.isBarEditing || !this.audioBuffer) return;
 
-            this.reverse = true;
-            const currentVal = parseFloat(this.speedSlider.value);
-            const nextVal = currentVal * -1; // 현재 속도에 -1 곱하기
-            
-            this.speedSlider.value = nextVal;
-            this.speedValue.textContent = nextVal.toFixed(3);
-            
-            // 재생 중이 아니었다면 재생 시작, 중이었다면 버퍼 교체를 위해 다시 호출
-            this.playBuffer(); 
-        };
+                    const rect = this.waveContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const width = rect.width;
 
-        // 정지 시 reverse 상태 초기화 (선택 사항)
-        this.stopBtn.onclick = () => {
-            this.isPlaying = false;
-            this.reverse = false; // 정지하면 다시 정방향 준비
-            if (this.sourceNode) this.sourceNode.stop();
-        };
+                    const viewDuration = this.config.viewDuration;
+                    const startTime = this.currentPosition - (viewDuration * 0.25);
+                    const clickedTime = startTime + (x / width) * viewDuration;
 
-        this.barEditBtn.onclick = () => {
-            this.isBarEditing = !this.isBarEditing;
-            this.barEditBtn.classList.toggle('active', this.isBarEditing);
-            this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : ''; // 활성화 시 색상 변경
-            this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
-        };
-        this.waveContainer.onclick = (e) => {
-            if (!this.isBarEditing || !this.audioBuffer) return;
+                    // 클릭 지점으로 마디 그리드 정렬
+                    this.beatOffset = clickedTime % this.beatInterval;
+                    this.drawWaveform(); // 즉시 다시 그리기
+                };
+            }
 
-            const rect = this.waveContainer.getBoundingClientRect();
-            const x = e.clientX - rect.left; // 클릭한 X 좌표
-            const width = rect.width;
+            // BPM 입력창 수동 변경
+            if (this.bpmInput) {
+                this.bpmInput.oninput = (e) => {
+                    this.updateBPM(e.target.value);
+                };
+            }
 
-            // 현재 파형 뷰의 시간 계산 로직 역산
-            const viewDuration = this.config.viewDuration;
-            const startTime = this.currentPosition - (viewDuration * 0.25);
-            
-            // 클릭한 지점의 실제 노래 시간(초) 계산
-            const clickedTime = startTime + (x / width) * viewDuration;
-
-            // 클릭한 지점을 새로운 비트의 시작점(Offset)으로 설정
-            // (clickedTime - n * beatInterval = beatOffset)
-            // 가장 가까운 마디로 맞추기 위해 현재 시간을 beatInterval로 나눈 나머지를 오프셋으로 활용
-            this.beatOffset = clickedTime % this.beatInterval;
-            
-            // 즉시 파형 다시 그리기
-            this.drawWaveform();
-        };
-        if (this.barEditBtn && this.waveContainer) {
-            this.barEditBtn.onclick = () => {
-                this.isBarEditing = !this.isBarEditing;
-                this.barEditBtn.classList.toggle('active', this.isBarEditing);
-                this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
-                this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
-            };
-
-            this.waveContainer.onclick = (e) => {
-                if (!this.isBarEditing || !this.audioBuffer) return;
-
-                const rect = this.waveContainer.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const width = rect.width;
-
-                const viewDuration = this.config.viewDuration;
-                const startTime = this.currentPosition - (viewDuration * 0.25);
-                const clickedTime = startTime + (x / width) * viewDuration;
-
-                // 클릭 지점을 기준으로 비트 오프셋 계산 및 적용
-                this.beatOffset = clickedTime % this.beatInterval;
-                this.drawWaveform();
-            };
-        }
-        
-        // BPM 입력 및 싱크 버튼 이벤트도 여기서 연결 가능합니다.
-        if (this.bpmInput) {
-            this.bpmInput.onchange = (e) => this.updateBPM(e.target.value);
-        }
-        if (this.syncBtn) {
-            this.syncBtn.onclick = () => {
-                const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
-                this.syncWith(otherDeck);
-            };
+            // 싱크 버튼
+            if (this.syncBtn) {
+                this.syncBtn.onclick = () => {
+                    // 전역 변수 deckA, deckB를 참조하여 상대 데크와 동기화
+                    const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
+                    this.syncWith(otherDeck);
+                };
+            }
         }
     }
 
@@ -311,79 +289,90 @@ class VinylDeck {
         this.speedSlider.value = 1.0; 
     }
     drawWaveform() {
-        const suffix = this.id.split('-')[1];
-        const container = document.getElementById(`audio-wave-viewer-${suffix}`);
-        if (!container || !this.audioBuffer) return;
+        // 1. 컨테이너나 오디오 데이터가 없으면 중단
+        if (!this.waveContainer || !this.audioBuffer) return;
 
-        let canvas = container.querySelector('canvas');
+        // 2. 캔버스 요소 가져오기 또는 생성
+        let canvas = this.waveContainer.querySelector('canvas');
         if (!canvas) {
-            container.innerHTML = '<canvas></canvas>';
-            canvas = container.querySelector('canvas');
+            canvas = document.createElement('canvas');
+            this.waveContainer.appendChild(canvas);
         }
         const ctx = canvas.getContext('2d');
-        canvas.width = container.offsetWidth;
-        canvas.height = container.offsetHeight;
 
+        // 3. 컨테이너 크기에 맞춰 캔버스 해상도 설정
+        const rect = this.waveContainer.getBoundingClientRect();
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        const width = canvas.width;
+        const height = canvas.height;
         const data = this.audioBuffer.getChannelData(0);
-        const sampleRate = this.audioBuffer.sampleRate;
-        const amp = canvas.height / 2;
-        const currentSample = this.currentPosition * sampleRate;
-        const samplesPerPixel = (this.config.viewDuration * sampleRate) / canvas.width;
+        const step = Math.ceil(data.length / (width * 100)); // 성능 최적화를 위한 샘플링
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 1. 파형 그리기
-        ctx.fillStyle = '#ff5722';
-        for (let i = 0; i < canvas.width; i++) {
-            const sampleIdx = Math.floor(currentSample + (i - canvas.width * 0.25) * samplesPerPixel);
-            let maxAmp = 0;
-            const checkWindow = Math.max(1, Math.floor(samplesPerPixel)); 
-            for (let j = 0; j < checkWindow; j++) {
-                if (sampleIdx + j < data.length) {
-                    const val = Math.abs(data[sampleIdx + j]);
-                    if (val > maxAmp) maxAmp = val;
-                }
-            }
-            const lineHeight = maxAmp * amp * 1.5;
-            ctx.fillRect(i, amp - lineHeight / 2, 1, lineHeight || 1);
+        ctx.clearRect(0, 0, width, height);
+
+        // 4. 파형 베이스라인 그리기
+        ctx.beginPath();
+        ctx.strokeStyle = '#4a4a4a';
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+
+        // 5. 현재 재생 위치 기준 파형 그리기
+        // 설정된 viewDuration(초)만큼의 영역을 보여줌 (현재 위치가 25% 지점에 오도록 설정)
+        const viewDuration = this.config.viewDuration;
+        const startTime = this.currentPosition - (viewDuration * 0.25);
+        const endTime = startTime + viewDuration;
+
+        ctx.beginPath();
+        ctx.strokeStyle = this.id === 'deck-a' ? '#00e5ff' : '#ff007b'; // 덱별 색상 차별화
+        ctx.lineWidth = 2;
+
+        for (let x = 0; x < width; x++) {
+            const time = startTime + (x / width) * viewDuration;
+            if (time < 0 || time >= this.audioBuffer.duration) continue;
+
+            const index = Math.floor(time * this.audioBuffer.sampleRate);
+            const val = data[index] || 0;
+            const y = (val + 1) * height / 2;
+
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
         }
+        ctx.stroke();
 
-        // 2. 박자 그리드 (수정된 로직)
-        if (this.beatInterval) {
-            ctx.save(); // 투명도 간섭을 막기 위해 상태 저장
-            const viewDuration = this.config.viewDuration;
-            const startTime = this.currentPosition - (viewDuration * 0.25);
-            const endTime = startTime + viewDuration;
+        // 6. 비트 그리드(마디 선) 그리기
+        if (this.beatInterval > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.setLineDash([5, 5]); // 점선 효과
 
-            // beatOffset 반영
-            let firstBeat = Math.ceil((startTime - this.beatOffset) / this.beatInterval) * this.beatInterval + this.beatOffset;
+            // beatOffset을 반영하여 첫 번째 비트 라인 시작점 계산
+            let firstBeatTime = Math.ceil(startTime / this.beatInterval) * this.beatInterval + this.beatOffset;
+            while (firstBeatTime > startTime) {
+                firstBeatTime -= this.beatInterval;
+            }
 
-            for (let t = firstBeat; t < endTime; t += this.beatInterval) {
-                const x = ((t - startTime) / viewDuration) * canvas.width;
-                const beatNumber = Math.round((t - this.beatOffset) / this.beatInterval);
-                
-                if (beatNumber % 4 === 0) {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; // 마디 선
-                    ctx.lineWidth = 2;
-                } else {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // 박자 선
-                    ctx.lineWidth = 1;
-                }
-                
-                ctx.beginPath();
+            for (let t = firstBeatTime; t < endTime; t += this.beatInterval) {
+                if (t < startTime) continue;
+                const x = ((t - startTime) / viewDuration) * width;
                 ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
+                ctx.lineTo(x, height);
             }
-            ctx.restore(); // 상태 복구
+            ctx.stroke();
+            ctx.setLineDash([]); // 점선 초기화
         }
 
-        // 3. 재생 지점 가이드
+        // 7. 현재 재생 지점 표시 (고정선)
+        const playheadX = width * 0.25;
+        ctx.beginPath();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(canvas.width * 0.25, 0);
-        ctx.lineTo(canvas.width * 0.25, canvas.height);
+        ctx.moveTo(playheadX, 0);
+        ctx.lineTo(playheadX, height);
         ctx.stroke();
     }
 
@@ -530,8 +519,8 @@ class VinylDeck {
     
 }
 
-const deckA = new VinylDeck('deck-a');
-const deckB = new VinylDeck('deck-b');
+const deckA = new VinylDeck('deck-a', 'multi-deck-container-a');
+const deckB = new VinylDeck('deck-b', 'multi-deck-container-b');
 
 const crossfader = document.querySelector('.crossfader-slider');
 
