@@ -46,6 +46,11 @@ class VinylDeck {
         this.playBtn = this.container.querySelector('.play-btn');
         this.stopBtn = this.container.querySelector('.stop-btn');
         this.reverseBtn = this.container.querySelector('.reverse-btn');
+        // EQ 슬라이더
+        this.volSlider = this.container.querySelector('.vol-slider');
+        this.lowSlider = this.container.querySelector('.low-slider');
+        this.midSlider = this.container.querySelector('.mid-slider');
+        this.highSlider = this.container.querySelector('.high-slider');
 
         // 2. 멀티덱 영역 (파형, BPM, BarEdit 버튼 등)
         // 이제 this.multiContainer 내부에서 찾습니다.    
@@ -56,12 +61,6 @@ class VinylDeck {
         this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
 
         this.bpmInput = this.multiContainer.querySelector('.bpm-input')
-
-        // EQ 슬라이더 (ID 기반으로 더 확실하게 참조)
-        this.volSlider = this.container.querySelector('.vol-slider');
-        this.lowSlider = this.container.querySelector('.low-slider');
-        this.midSlider = this.container.querySelector('.mid-slider');
-        this.highSlider = this.container.querySelector('.high-slider');
 
         this.isBarEditing = false;
     }
@@ -272,7 +271,8 @@ class VinylDeck {
     updateBPM(value) {
         this.bpm = parseFloat(value) || 120;
         this.beatInterval = 60 / this.bpm;
-        this.bpmInput.textContent = `${this.bpm} BPM`;
+        this.bpmDisplay.textContent = `${this.bpm} BPM`;
+        this.bpmInput.value = this.bpm;
     }
 
     // 그리드 좌우 밀기 조절
