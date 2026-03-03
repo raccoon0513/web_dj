@@ -28,14 +28,20 @@ class VinylDeck {
         this.initEvents();
     }
     initDOM() {
+        // 1. LP판 및 라이브러리 컨트롤 (원래 위치)
         this.vinyl = this.container.querySelector('.vinyl');
         this.speedSlider = this.container.querySelector('.speedSlider');
         this.speedValue = this.container.querySelector('.speedValue');
+        this.fileInput = this.container.querySelector('.fileInput');
+        this.uploadBtn = this.container.querySelector('.uploadBtn');
+        this.progressSlider = this.container.querySelector('.progressSlider');
+        this.currentTimeText = this.container.querySelector('.currentTime');
+        this.durationText = this.container.querySelector('.duration');
         this.playBtn = this.container.querySelector('.play-btn');
         this.stopBtn = this.container.querySelector('.stop-btn');
         this.reverseBtn = this.container.querySelector('.reverse-btn');
 
-        // 2. 중앙 멀티덱 영역 요소들 (id="multi-deck-container-a/b" 내부)
+        // 2. 중앙 멀티덱 영역 (새로운 위치)
         const suffix = this.id.split('-')[1]; // 'a' 또는 'b'
         const multiContainer = document.getElementById(`multi-deck-container-${suffix}`);
         
@@ -47,21 +53,46 @@ class VinylDeck {
             this.syncBtn = multiContainer.querySelector('.sync-toggle-btn');
         }
 
+        // 3. EQ 및 볼륨 (기본값 설정)
+        this.volSlider = this.container.querySelector('.vol-slider') || this.container.querySelector('.vertical-slider');
+        this.lowSlider = this.container.querySelector('.low-slider input') || document.getElementById(`low-${suffix}`);
+        this.midSlider = this.container.querySelector('.mid-slider input') || document.getElementById(`mid-${suffix}`);
+        this.highSlider = this.container.querySelector('.high-slider input') || document.getElementById(`high-${suffix}`);
+
         this.isBarEditing = false;
     }
 
     initEvents() {
-        this.uploadBtn.onclick = () => this.fileInput.click();
-        this.fileInput.onchange = (e) => this.handleFile(e.target.files[0]);
-        
-        this.vinyl.onmousedown = (e) => this.startDragging(e);
-        window.addEventListener('mousemove', (e) => this.drag(e));
-        window.addEventListener('mouseup', () => this.stopDragging());
+        if (this.uploadBtn && this.fileInput) {
+            this.uploadBtn.onclick = () => this.fileInput.click();
+            this.fileInput.onchange = (e) => this.handleFile(e.target.files[0]);
+        }
 
-        this.speedSlider.oninput = () => {
-            this.speedValue.textContent = parseFloat(this.speedSlider.value).toFixed(3);
-        };
+        // BarEdit 및 파형 클릭 로직
+        if (this.barEditBtn && this.waveContainer) {
+            this.barEditBtn.onclick = () => {
+                this.isBarEditing = !this.isBarEditing;
+                this.barEditBtn.classList.toggle('active', this.isBarEditing);
+                this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
+                this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
+            };
 
+            this.waveContainer.onclick = (e) => {
+                if (!this.isBarEditing || !this.audioBuffer) return;
+                const rect = this.waveContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const clickedTime = (this.currentPosition - (this.config.viewDuration * 0.25)) + (x / rect.width) * this.config.viewDuration;
+                this.beatOffset = clickedTime % this.beatInterval;
+                this.drawWaveform();
+            };
+        }
+
+        // BPM 입력창 이벤트
+        if (this.bpmInput) {
+            this.bpmInput.onchange = (e) => this.updateBPM(e.target.value);
+        }
+
+        // 재생버튼
         this.playBtn.onclick = () => {
             if (!this.audioBuffer) return;
             
