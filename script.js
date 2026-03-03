@@ -48,28 +48,20 @@ class VinylDeck {
         this.reverseBtn = this.container.querySelector('.reverse-btn');
 
         // 2. 멀티덱 영역 (파형, BPM, BarEdit 버튼 등)
-        // 이제 this.multiContainer 내부에서 찾습니다.
-        if (this.multiContainer) {
-            this.waveContainer = this.multiContainer.querySelector('.audio-wave-viewer');
-            this.barEditBtn = this.multiContainer.querySelector('.bar-edit-btn');
-            this.bpmInput = this.multiContainer.querySelector('.bpm-input');
-            this.bpmDisplay = this.multiContainer.querySelector('.bpm-viewr');
-            this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
-        }
+        // 이제 this.multiContainer 내부에서 찾습니다.    
+        this.waveContainer = this.multiContainer.querySelector('.audio-wave-viewer');
+        this.barEditBtn = this.multiContainer.querySelector('.bar-edit-btn');
+        this.bpmInput = this.multiContainer.querySelector('.bpm-input');
+        this.bpmDisplay = this.multiContainer.querySelector('.bpm-viewr');
+        this.syncBtn = this.multiContainer.querySelector('.sync-toggle-btn');
 
-        // [중요] suffix 정의 추가
-        const suffix = this.id.split('-')[1]; // 'deck-a'에서 'a'를 추출
-
-        this.bpmInput = document.getElementById(`bpm-input-${suffix}`);
-
-        // 만약 bpm-viewr 등 다른 요소를 찾을 때도 suffix가 쓰인다면 이 줄 아래에서 사용해야 합니다.
-        const display = document.getElementById(`bpm-viewr-${suffix}`);
+        this.bpmInput = this,this.multiContainer.querySelector('.bpm-input')
 
         // EQ 슬라이더 (ID 기반으로 더 확실하게 참조)
-        this.volSlider = document.getElementById(`vol-${suffix}`) || this.container.querySelector('.vol-slider');
-        this.lowSlider = document.getElementById(`low-${suffix}`);
-        this.midSlider = document.getElementById(`mid-${suffix}`);
-        this.highSlider = document.getElementById(`high-${suffix}`);
+        this.volSlider = this.container.querySelector('.vol-slider');
+        this.lowSlider = this.container.querySelector('.low-slider');
+        this.midSlider = this.container.querySelector('.mid-slider');
+        this.highSlider = this.container.querySelector('.high-slider');
 
         this.isBarEditing = false;
     }
@@ -281,9 +273,7 @@ class VinylDeck {
     updateBPM(value) {
         this.bpm = parseFloat(value) || 120;
         this.beatInterval = 60 / this.bpm;
-        const suffix = this.id.split('-')[1];
-        const display = document.getElementById(`bpm-viewr-${suffix}`);
-        if (display) display.textContent = `${this.bpm} BPM`;
+        this.bpmInput.textContent = `${this.bpm} BPM`;
     }
 
     // 그리드 좌우 밀기 조절

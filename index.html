@@ -40,24 +40,24 @@
                 </div>
 
                 <div class="eq-container">
-                    <div class="gain-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>gain</span>
-                        <input type="range" class="vertical-slider" min="0" max="1" step="0.01" value="0.8">
+                        <input type="range" class="vertical-slider vol-slider" min="0" max="1" step="0.01" value="0.8">
                         <button class="reset-btn">reset</button>
                     </div>
-                    <div class="low-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>low</span>
-                        <input type="range" class="vertical-slider" step="0.5" min="-24" max="12" value="0" >
+                        <input type="range" class="vertical-slider low-slider" step="0.5" min="-24" max="12" value="0" >
                         <button class="reset-btn">reset</button>
                     </div>
-                    <div class="middle-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>mid</span>
-                        <input type="range" class="vertical-slider" step="0.5" min="-24" max="12" value="0" >
+                        <input type="range" class="vertical-slider mid-slider" step="0.5" min="-24" max="12" value="0" >
                         <button class="reset-btn">reset</button>
                     </div>
-                    <div class="high-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>high</span>
-                        <input type="range" class="vertical-slider" step="0.5" min="-24" max="12" value="0" >
+                        <input type="range" class="vertical-slider high-slider" step="0.5" min="-24" max="12" value="0" >
                         <button class="reset-btn">reset</button>
                     </div>
                 </div>
@@ -85,11 +85,8 @@
             </div>
 
         </div>
-    
-            
-        
 
-                <div class="deck single-deck" id="deck-b">
+        <div class="deck single-deck" id="deck-b">
             <div class="turntable-wrapper">
                 <div class="turntable">
                     <div class="vinyl"></div>
@@ -105,6 +102,7 @@
                         <span class="currentTime">0:00</span>
                         <span class="duration">0:00</span>
                     </div>
+
                     <input type="range" class="progressSlider" min="0" max="100" value="0">
                 </div>
 
@@ -118,33 +116,31 @@
                     <input type="range" class="speedSlider" min="-2" max="2" step="0.1" value="1">
                 </div>
 
-                <div class="eq-container" id="eq-container-b">
-                    <div class="gain-slider to-center-container flex-direction-column">
+                <div class="eq-container">
+                    <div class="to-center-container flex-direction-column">
                         <span>gain</span>
-                        <input type="range" class="vertical-slider" id="vol-b" min="0" max="1" step="0.01" value="0.8">
-                        <button class="reset-btn" id="gain-reset-b">reset</button>
+                        <input type="range" class="vertical-slider vol-slider" min="0" max="1" step="0.01" value="0.8">
+                        <button class="reset-btn">reset</button>
                     </div>
-                    <div class="low-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>low</span>
-                        <input type="range" class="vertical-slider" id="low-b" step="0.5" min="-24" max="12" value="0" >
-                        <button class="reset-btn" id="low-reset-b">reset</button>
+                        <input type="range" class="vertical-slider low-slider" step="0.5" min="-24" max="12" value="0" >
+                        <button class="reset-btn">reset</button>
                     </div>
-                    <div class="middle-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>mid</span>
-                        <input type="range" class="vertical-slider" id="mid-b" step="0.5" min="-24" max="12" value="0" >
-                        <button class="reset-btn" id="middle-reset-b">reset</button>
+                        <input type="range" class="vertical-slider mid-slider" step="0.5" min="-24" max="12" value="0" >
+                        <button class="reset-btn">reset</button>
                     </div>
-                    <div class="high-slider to-center-container flex-direction-column">
+                    <div class="to-center-container flex-direction-column">
                         <span>high</span>
-                        <input type="range" class="vertical-slider" id="high-b" step="0.5" min="-24" max="12" value="0" >
-                        <button class="reset-btn" id="high-reset-b">reset</button>
+                        <input type="range" class="vertical-slider high-slider" step="0.5" min="-24" max="12" value="0" >
+                        <button class="reset-btn">reset</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        
-    </div>
     <script src="script.js"></script>
 </body>
 </html>
