@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "daily",
+			"path": "../daily"
+		},
+		{
+			"name": "daily_dev",
+			"path": "../daily_dev"
+		},
+		{
+			"name": "web_dj",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

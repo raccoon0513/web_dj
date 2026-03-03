@@ -64,35 +64,34 @@
         </div>
         
         <!-- 중앙 멀티 deck -->
-         <!-- TODO 여기 수정할것 -->
         <div class="deck" id="multi-deck">
-            <div class="audio-wave-container">
-                <div class="multi-deck-container">
-                    <div class="control-row">
-                    <input type="number" class="bpm-input" id="bpm-input-a" step="0.1" value="120" onchange="deckA.updateBPM(this.value)">
-                    <button onclick="deckA.adjustOffset(-0.01)">←</button>
-                    <button onclick="deckA.adjustOffset(0.01)">→</button>
-                    <button class="sync-toggle-btn" onclick="deckA.syncWith(deckB)">sync</button>
-                    <span class="bpm-viewr" id="bpm-viewr-a">120bpm</span>
-                    <div class="audio-wave-viewer" id="audio-wave-viewer-a"></div>
+            <div class="multi-deck-container" id="multi-deck-container-a">
+                <div class="control-row">
+                    <input type="number" class="bpm-input" step="0.1" value="120">
+                    <!-- onchange="deckA.updateBPM(this.value)-->
+                    <button class="sync-toggle-btn">sync</button>
+                    <span class="bpm-viewr">120bpm</span>
+                    <div class="audio-wave-viewer"></div>
+                </div>
+            </div>
+            <div class="multi-deck-container" id="multi-deck-container-a">
+                <div class="control-row">
+                    <input type="number" class="bpm-input" step="0.1" value="120">
+                    <!-- onchange="deckA.updateBPM(this.value)-->
+                    <button class="sync-toggle-btn">sync</button>
+                    <span class="bpm-viewr">120bpm</span>
+                    <div class="audio-wave-viewer"></div>
                 </div>
             </div>
                 
-
-                <div class="control-row">
-                    <input type="number" class="bpm-input" id="bpm-input-b" step="0.1" value="120" onchange="deckB.updateBPM(this.value)">
-                    <button onclick="deckB.adjustOffset(-0.01)">←</button>
-                    <button onclick="deckB.adjustOffset(0.01)">→</button>
-                    <button class="sync-toggle-btn" onclick="deckB.syncWith(deckA)">sync</button>
-                    <span class="bpm-viewr" id="bpm-viewr-b">120bpm</span>
-                </div>
-                <div class="audio-wave-viewer" id="audio-wave-viewer-b"></div>
-            </div>
-    
             <div class="crossfader">
                 <input type="range" class="crossfader-slider" min="0" max="100" value="50">
             </div>
+
         </div>
+    
+            
+        
 
                 <div class="deck single-deck" id="deck-b">
             <div class="turntable-wrapper">
