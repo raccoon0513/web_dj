@@ -67,7 +67,6 @@ class VinylDeck {
     }
 
     initEvents() {
-        // --- 1. 사이드 덱 (this.container) 관련 이벤트 ---
         
         // 노래 업로드
         if (this.uploadBtn && this.fileInput) {
