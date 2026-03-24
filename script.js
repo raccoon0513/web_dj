@@ -131,13 +131,7 @@ class VinylDeck {
             // BarEdit 모드 토글
             if (this.barEditBtn) {
                 this.barEditBtn.onclick = () => {
-                    this.isBarEditing = !this.isBarEditing;
-                    this.barEditBtn.classList.toggle('active', this.isBarEditing);
-                    // 활성화 시 시각적 피드백 (CSS active 클래스가 있다면 스타일 생략 가능)
-                    this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
-                    if (this.waveContainer) {
-                        this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
-                    }
+                    this.barEdit_mode_control()
                 };
             }
 
@@ -153,7 +147,8 @@ class VinylDeck {
                     const viewDuration = this.config.viewDuration;
                     const startTime = this.currentPosition - (viewDuration * 0.25);
                     const clickedTime = startTime + (x / width) * viewDuration;
-
+                    
+                    this.barEdit_mode_control()
                     // 클릭 지점으로 마디 그리드 정렬
                     this.beatOffset = clickedTime % this.beatInterval;
                     this.drawWaveform(); // 즉시 다시 그리기
@@ -176,6 +171,15 @@ class VinylDeck {
                     this.syncWith(otherDeck);
                 };
             }
+        }
+    }
+    barEdit_mode_control(){
+        this.isBarEditing = !this.isBarEditing;
+        this.barEditBtn.classList.toggle('active', this.isBarEditing);
+        // 활성화 시 시각적 피드백 (CSS active 클래스가 있다면 스타일 생략 가능)
+        this.barEditBtn.style.backgroundColor = this.isBarEditing ? '#ff5722' : '';
+        if (this.waveContainer) {
+            this.waveContainer.style.cursor = this.isBarEditing ? 'crosshair' : 'default';
         }
     }
 
