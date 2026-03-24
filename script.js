@@ -144,19 +144,22 @@ class VinylDeck {
             // 파형 클릭 (비트 오프셋 보정)
             if (this.waveContainer) {
                 this.waveContainer.onclick = (e) => {
-                    if (!this.isBarEditing || !this.audioBuffer) return;
-
                     const rect = this.waveContainer.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const width = rect.width;
+                    
+                    // 바 위치(offset) 계산 및 적용 로직 (기존 로직 유지)
+                    this.barOffset = (x / width) * this.audioBuffer.duration; 
 
-                    const viewDuration = this.config.viewDuration;
-                    const startTime = this.currentPosition - (viewDuration * 0.25);
-                    const clickedTime = startTime + (x / width) * viewDuration;
-
-                    // 클릭 지점으로 마디 그리드 정렬
-                    this.beatOffset = clickedTime % this.beatInterval;
-                    this.drawWaveform(); // 즉시 다시 그리기
+                    // [핵심] 클릭 시 편집 모드 종료
+                    if (this.isBarEditing) {
+                        this.isBarEditing = false;
+                        if (this.barEditBtn) {
+                            this.barEditBtn.textContent = 'Bar Edit'; // 버튼 텍스트 복구
+                            this.barEditBtn.classList.remove('editing'); // 스타일 클래스 제거
+                        }
+                        console.log("Bar position set, exiting Edit Mode.");
+                    }
                 };
             }
 

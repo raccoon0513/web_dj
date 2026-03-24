@@ -9,7 +9,6 @@
 			"path": "../daily_dev"
 		},
 		{
-			"name": "web_dj",
 			"path": "."
 		}
 	],
