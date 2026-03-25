@@ -420,90 +420,62 @@ class VinylDeck {
     }
 
     updateUI() {
-        if (!this.isPlaying) return;
+        if (!this.isPlaying || !this.sourceNode) return;
 
-        let baseSpeed = parseFloat(this.speedSlider.value);
-        let effectiveSpeed;
+        // 1. 기본 슬라이더 값 (절대값으로 관리하여 방향 혼선 방지)
+        const baseSpeed = parseFloat(this.speedSlider.value);
+        let finalSpeed;
 
         if (this.isDragging) {
-            // [중요] 마우스를 잡고 있는데 움직임이 멈췄다면(50ms 이상) 속도를 0으로 강제
-            if (performance.now() - this.lastMouseMoveTime > 50) {
-                this.dragVelocity = 0;
-            }
-
-            this.brakeVelocity *= this.config.brake_force;
-            // 드래그 중에는 오직 (감속중인 베이스 + 현재 손속도)만 반영
-            effectiveSpeed = this.brakeVelocity + this.dragVelocity;
-            this.isSyncing = false; // 드래그 시작하면 동기화 모드 해제
+            // 드래그 중에는 즉시 동기화 모드 해제 (사용자 조작 우선)
+            this.isSyncing = false;
+            finalSpeed = this.dragVelocity;
         } else {
-            // 관성 계산
+            // 관성 적용
             this.dragVelocity *= this.config.friction;
-            if (Math.abs(this.dragVelocity) < 0.001) this.dragVelocity = 0;
+            if (Math.abs(this.dragVelocity) < 0.01) this.dragVelocity = 0;
             
-            effectiveSpeed = baseSpeed + this.dragVelocity;
+            finalSpeed = baseSpeed + this.dragVelocity;
 
-            // [동기화 로직] 내 속도만 조절하여 상대에게 맞춤
+            // [동기화 로직] 내 덱만 조절하여 상대에게 맞춤
             if (this.isSyncing) {
                 const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
-                
-                // 1. 위상차(Phase Difference) 계산
-                const otherRelPos = (otherDeck.currentPosition - otherDeck.beatOffset) % otherDeck.beatInterval;
-                const myRelPos = (this.currentPosition - this.beatOffset) % this.beatInterval;
-                
-                let drift = otherRelPos - myRelPos;
 
-                // 최단 거리 보정 (빨라지거나 느려지거나 둘 다 허용)
-                if (drift > this.beatInterval / 2) drift -= this.beatInterval;
-                if (drift < -this.beatInterval / 2) drift += this.beatInterval;
+                // 상대 덱이 유효한 경우에만 내 속도 보정
+                if (otherDeck && otherDeck.isPlaying) {
+                    const otherRelPos = (otherDeck.currentPosition - otherDeck.beatOffset) % otherDeck.beatInterval;
+                    const myRelPos = (this.currentPosition - this.beatOffset) % this.beatInterval;
+                    
+                    let drift = otherRelPos - myRelPos;
+                    if (drift > this.beatInterval / 2) drift -= this.beatInterval;
+                    if (drift < -this.beatInterval / 2) drift += this.beatInterval;
 
-                // 2. 종료 조건: 박자가 거의 일치하면 원래 속도로 복귀
-                if (Math.abs(drift) < 0.005) {
-                    this.isSyncing = false;
+                    if (Math.abs(drift) < 0.005) {
+                        this.isSyncing = false;
+                    } else {
+                        // 중요: 내 속도(finalSpeed)에만 drift 보정값을 더함
+                        finalSpeed += (drift * 0.4); 
+                    }
                 } else {
-                    // 3. 내 속도(effectiveSpeed)에만 보정값 적용
-                    // drift가 양수(내가 뒤처짐)면 가속, 음수(내가 앞섬)면 감속
-                    effectiveSpeed += (drift * 0.4); 
+                    this.isSyncing = false;
                 }
             }
         }
 
-        effectiveSpeed = Math.max(Math.min(effectiveSpeed, this.config.tempo_rate), -this.config.tempo_rate);
-        
-        // 오디오 필터 및 속도 적용
-        if (this.filterNode) {
-            let cutoff = Math.max(2000, 20000 - Math.abs(effectiveSpeed) * 3000);
-            this.filterNode.frequency.setTargetAtTime(cutoff, this.audioCtx.currentTime, 0.1);
-        }
+        // 2. 오디오 엔진 적용 (this.sourceNode만 수정하여 타 덱 간섭 차단)
+        // 재생 속도는 절대값으로 설정하고, 음수일 때의 처리는 playBuffer의 reversedBuffer가 담당하게 함
+        const playbackRate = Math.max(0.06, Math.abs(finalSpeed)); 
+        this.sourceNode.playbackRate.setValueAtTime(playbackRate, this.audioContext.currentTime);
 
-        let now = this.audioCtx.currentTime;
-        let deltaTime = now - this.lastUpdateTime;
-        this.lastUpdateTime = now;
+        // 3. 현재 위치 업데이트 (방향 반영)
+        const direction = finalSpeed >= 0 ? 1 : -1;
+        this.currentPosition += (this.audioContext.baseLatency || 0.01) * playbackRate * direction;
 
-        this.currentPosition += deltaTime * effectiveSpeed;
-        this.renderVinyl(effectiveSpeed, deltaTime);
+        // 4. 파형 및 LP 렌더링 (내 덱의 요소만 업데이트)
+        this.drawWaveform();
+        this.renderVinyl(finalSpeed);
 
-        if (this.currentPosition >= this.audioBuffer.duration || this.currentPosition < 0) {
-            this.isPlaying = false;
-            if (this.sourceNode) this.sourceNode.stop();
-            this.currentPosition = Math.max(0, Math.min(this.currentPosition, this.audioBuffer.duration));
-            this.drawWaveform();
-            return; 
-        }
-
-        if (this.sourceNode) {
-            this.sourceNode.playbackRate.value = Math.max(0.001, Math.abs(effectiveSpeed));
-            this.speedValue.textContent = effectiveSpeed.toFixed(3);
-        }
-
-        // 진행 바 업데이트
-        const progress = (this.currentPosition / this.audioBuffer.duration) * 100;
-        this.progressSlider.value = progress;
-        this.currentTimeText.textContent = this.formatTime(this.currentPosition);
-        this.drawWaveform();    
-
-        requestAnimationFrame(() => this.updateUI());
-
-        
+        this.animationId = requestAnimationFrame(() => this.updateUI());
     }
 
     renderVinyl(speed, deltaTime) {
