@@ -436,29 +436,32 @@ class VinylDeck {
             effectiveSpeed = this.brakeVelocity + this.dragVelocity;
             this.isSyncing = false; // 드래그 시작하면 동기화 모드 해제
         } else {
+            // 관성 계산
             this.dragVelocity *= this.config.friction;
             if (Math.abs(this.dragVelocity) < 0.001) this.dragVelocity = 0;
             
             effectiveSpeed = baseSpeed + this.dragVelocity;
 
-            // [추가] 가속 동기화 로직
+            // [동기화 로직] 내 속도만 조절하여 상대에게 맞춤
             if (this.isSyncing) {
                 const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
-            
-                // 1. 상대 덱과의 박자 차이(위상차) 계산
+                
+                // 1. 위상차(Phase Difference) 계산
                 const otherRelPos = (otherDeck.currentPosition - otherDeck.beatOffset) % otherDeck.beatInterval;
                 const myRelPos = (this.currentPosition - this.beatOffset) % this.beatInterval;
                 
                 let drift = otherRelPos - myRelPos;
+
+                // 최단 거리 보정 (빨라지거나 느려지거나 둘 다 허용)
                 if (drift > this.beatInterval / 2) drift -= this.beatInterval;
                 if (drift < -this.beatInterval / 2) drift += this.beatInterval;
 
-                // 2. 오차 범위 안으로 들어오면 동기화 종료
+                // 2. 종료 조건: 박자가 거의 일치하면 원래 속도로 복귀
                 if (Math.abs(drift) < 0.005) {
                     this.isSyncing = false;
                 } else {
-                    // 3. 내 속도(effectiveSpeed)를 조절
-                    // drift > 0 이면 내가 뒤처진 것이므로 속도를 높여서 따라잡음
+                    // 3. 내 속도(effectiveSpeed)에만 보정값 적용
+                    // drift가 양수(내가 뒤처짐)면 가속, 음수(내가 앞섬)면 감속
                     effectiveSpeed += (drift * 0.4); 
                 }
             }
@@ -496,7 +499,7 @@ class VinylDeck {
         const progress = (this.currentPosition / this.audioBuffer.duration) * 100;
         this.progressSlider.value = progress;
         this.currentTimeText.textContent = this.formatTime(this.currentPosition);
-        this.drawWaveform();
+        this.drawWaveform();    
 
         requestAnimationFrame(() => this.updateUI());
 
@@ -543,16 +546,16 @@ class VinylDeck {
     stopDragging() {
         this.isDragging = false;
 
-        // 상대 덱 (내가 맞춰야 할 대상)
+        // 상대 덱 정보만 참조 (수정은 하지 않음)
         const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
 
-        // 조건: 상대 덱이 재생 중이고, 싱크 모드(BPM 일치) 상태일 때
         const isBothActive = otherDeck && otherDeck.isPlaying && this.isPlaying;
         const isTempoSynced = Math.abs(this.bpm - otherDeck.bpm) < 0.1;
 
         if (isBothActive && isTempoSynced) {
-            this.isSyncing = true; // '내'가 동기화를 시작함
-            console.log(`[Sync] ${this.id}가 ${otherDeck.id}의 박자에 맞춰 가속을 시작합니다.`);
+            // 오직 '내(this)' 덱만 동기화 모드로 진입
+            this.isSyncing = true; 
+            console.log(`[Sync Start] ${this.id} will now adjust itself to ${otherDeck.id}`);
         }
     }
 
