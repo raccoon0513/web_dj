@@ -444,20 +444,21 @@ class VinylDeck {
             // [추가] 가속 동기화 로직
             if (this.isSyncing) {
                 const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
-                
-                // 상대 덱과의 비트 위치 차이 계산 (Phase Difference)
+            
+                // 1. 상대 덱과의 박자 차이(위상차) 계산
                 const otherRelPos = (otherDeck.currentPosition - otherDeck.beatOffset) % otherDeck.beatInterval;
                 const myRelPos = (this.currentPosition - this.beatOffset) % this.beatInterval;
                 
                 let drift = otherRelPos - myRelPos;
                 if (drift > this.beatInterval / 2) drift -= this.beatInterval;
                 if (drift < -this.beatInterval / 2) drift += this.beatInterval;
-              
-                // 차이가 아주 작으면 동기화 종료
+
+                // 2. 오차 범위 안으로 들어오면 동기화 종료
                 if (Math.abs(drift) < 0.005) {
                     this.isSyncing = false;
                 } else {
-                    // 3. 차이에 비례하여 속도를 일시적으로 가속/감속 (0.4는 강도 조절 값)
+                    // 3. 내 속도(effectiveSpeed)를 조절
+                    // drift > 0 이면 내가 뒤처진 것이므로 속도를 높여서 따라잡음
                     effectiveSpeed += (drift * 0.4); 
                 }
             }
@@ -542,18 +543,16 @@ class VinylDeck {
     stopDragging() {
         this.isDragging = false;
 
-        // 상대 덱 찾기
+        // 상대 덱 (내가 맞춰야 할 대상)
         const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
 
-        // [조건 추가] 
-        // 1. 상대 덱이 존재하고 재생 중인가? (2개 다 활성화)
-        // 2. 현재 내 덱의 BPM이 상대와 일치하는가? (싱크 모드 적용 여부)
+        // 조건: 상대 덱이 재생 중이고, 싱크 모드(BPM 일치) 상태일 때
         const isBothActive = otherDeck && otherDeck.isPlaying && this.isPlaying;
         const isTempoSynced = Math.abs(this.bpm - otherDeck.bpm) < 0.1;
 
         if (isBothActive && isTempoSynced) {
-            this.isSyncing = true;
-            console.log(`[Sync] 조건을 만족하여 가속 동기화를 시작합니다.`);
+            this.isSyncing = true; // '내'가 동기화를 시작함
+            console.log(`[Sync] ${this.id}가 ${otherDeck.id}의 박자에 맞춰 가속을 시작합니다.`);
         }
     }
 
