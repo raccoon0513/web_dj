@@ -107,12 +107,23 @@ class VinylDeck {
         // 역재생 버튼
         if (this.reverseBtn) {
             this.reverseBtn.onclick = () => {
-                if (!this.audioBuffer || this.reverse) return;
-                this.reverse = true;
-                const nextVal = parseFloat(this.speedSlider.value) * -1;
+                if (!this.audioBuffer) return;
+
+                // 1. 현재 슬라이더 값에 -1을 곱해서 방향을 반전 (토글)
+                const currentVal = parseFloat(this.speedSlider.value);
+                const nextVal = currentVal * -1;
+
+                // 2. UI 업데이트 (슬라이더와 표시 텍스트)
                 this.speedSlider.value = nextVal;
                 this.speedValue.textContent = nextVal.toFixed(3);
-                this.playBuffer(); 
+
+                // 3. 재생 중이었다면, 바뀐 속도(방향)를 즉시 오디오에 반영
+                if (this.isPlaying) {
+                    // 현재 위치를 유지하면서 버퍼 방향만 바꾸기 위해 playBuffer 호출
+                    this.playBuffer(); 
+                }
+
+                console.log(`Direction toggled. Current speed: ${nextVal}`);
             };
         }
 
