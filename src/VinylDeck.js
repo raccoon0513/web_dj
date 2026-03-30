@@ -238,22 +238,22 @@ class VinylDeck {
     }
 
     startDragging(e) {
-        if (!this.isPlaying) return;
-        this.isDragging = true;
-        this.dragVelocity = 0;
-        this.lastValidVelocity = 0; // 마지막 유효 속도 기록용 버퍼
-        this.lastDragTime = performance.now();
+        if (!this.state.isPlaying) return;
         
-        const rect = this.vinyl.getBoundingClientRect();
+        this.state.isDragging = true;
+        this.state.dragVelocity = 0;
+        this.state.lastValidVelocity = 0; 
+        // performance.now(), lastDragTime 관련 코드 제거
+        
+        const rect = this.view.vinyl.getBoundingClientRect(); 
         this.centerX = rect.left + rect.width / 2;
         this.centerY = rect.top + rect.height / 2;
         this.lastAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
     }
 
     drag(e) {
-        if (!this.isDragging) return;
+        if (!this.state.isDragging) return;
         
-        const now = performance.now();
         const currentMouseAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
         let delta = currentMouseAngle - this.lastAngle;
         
@@ -262,31 +262,28 @@ class VinylDeck {
 
         const instantaneousVelocity = delta * this.config.lp_sensitivity;
         
-        // 변위가 존재하는 유효한 움직임일 경우에만 백업 데이터 갱신
+        // 의미 있는 움직임(0.5도 초과)이 있을 때만 유효 속도로 기록
         if (Math.abs(delta) > 0.5) {
-            this.lastValidVelocity = instantaneousVelocity;
+            this.state.lastValidVelocity = instantaneousVelocity;
         }
 
-        this.dragVelocity = instantaneousVelocity;
+        this.state.dragVelocity = instantaneousVelocity;
         this.lastAngle = currentMouseAngle;
-        this.lastDragTime = now;
+        // lastDragTime 업데이트 코드 제거
     }
 
     stopDragging() {
-        this.isDragging = false;
+        this.state.isDragging = false;
 
-        // 마우스를 떼기 직전(50ms 이내)의 조작 상태를 검증
-        // 멈춰있지 않고 던지는 중이었다면, 마지막으로 기록된 유효 관성 속도를 복원
-        if (performance.now() - this.lastDragTime < 50) {
-            this.dragVelocity = this.lastValidVelocity;
-        }
+        // 50ms 검증 없이, 마지막으로 의미 있었던 속도를 즉시 할당하여 관성 준비
+        this.state.dragVelocity = this.state.lastValidVelocity;
 
-        const otherDeck = (this.id === 'deck-a') ? deckB : deckA;
-        const isBothActive = otherDeck && otherDeck.isPlaying && this.isPlaying;
-        const isTempoSynced = Math.abs(this.bpm - otherDeck.bpm) < 0.1;
+        const otherDeck = this.getOtherDeck();
+        const isBothActive = otherDeck && otherDeck.state.isPlaying && this.state.isPlaying;
+        const isTempoSynced = Math.abs(this.state.bpm - otherDeck.state.bpm) < 0.1;
     
         if (isBothActive && isTempoSynced) {
-            this.isSyncing = true; 
+            this.state.isSyncing = true; 
         }
     }
 }
