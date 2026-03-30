@@ -1,8 +1,4 @@
-import { AudioEngine } from './AudioEngine.js';
-import { DeckView } from './DeckView.js';
-import { extractBPMFromFileName, formatTime } from './utils.js';
-
-export class VinylDeck {
+class VinylDeck {
     constructor(id, multiId) {
         this.id = id;
         this.engine = new AudioEngine();

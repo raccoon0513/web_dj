@@ -1,4 +1,4 @@
-export class DeckView {
+class DeckView {
     constructor(id, multiId) {
         this.id = id;
         this.container = document.getElementById(id);

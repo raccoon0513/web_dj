@@ -3,7 +3,7 @@
  * @param {number} sec - 변환할 초 단위 시간
  * @returns {string} '0:00' 형식의 문자열
  */
-export const formatTime = (sec) => {
+const formatTime = (sec) => {
     const m = Math.floor(Math.max(0, sec) / 60);
     const s = Math.floor(Math.max(0, sec) % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -15,7 +15,7 @@ export const formatTime = (sec) => {
  * @param {string} fileName - 파일명
  * @returns {number|null} 추출된 BPM 값 또는 null
  */
-export const extractBPMFromFileName = (fileName) => {
+const extractBPMFromFileName = (fileName) => {
     // 확장자를 제외한 파일 이름 추출
     const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
     

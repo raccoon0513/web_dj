@@ -2,7 +2,7 @@
  * Web Audio API를 이용한 오디오 처리 엔진 클래스입니다.
  * 재생, 정지, 필터(EQ), 속도 조절 등 '소리'와 관련된 로직만 담당합니다.
  */
-export class AudioEngine {
+class AudioEngine {
     constructor() {
         this.audioCtx = null;
         this.gainNode = null;
