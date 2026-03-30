@@ -12,6 +12,7 @@ class VinylDeck {
             currentAngle: 0,
             isDragging: false,
             dragVelocity: 0,
+            lastValidVelocity: 0,
             bpm: 120,
             beatOffset: 0,
             beatInterval: 60 / 120,
@@ -201,7 +202,7 @@ class VinylDeck {
         const now = this.engine.audioCtx.currentTime;
         const deltaTime = now - this.state.lastUpdateTime;
         this.state.lastUpdateTime = now;
-
+        
         this.state.currentPosition += deltaTime * effectiveSpeed;
         
         const rotationPerSecond = 360 / 1.8;
@@ -260,22 +261,15 @@ class VinylDeck {
         if (delta > 180) delta -= 360;
         else if (delta < -180) delta += 360;
 
-        const instantaneousVelocity = delta * this.config.lp_sensitivity;
-        
-        // 의미 있는 움직임(0.5도 초과)이 있을 때만 유효 속도로 기록
-        if (Math.abs(delta) > 0.5) {
-            this.state.lastValidVelocity = instantaneousVelocity;
-        }
-
-        this.state.dragVelocity = instantaneousVelocity;
+        this.state.dragVelocity = delta * this.config.lp_sensitivity;
         this.lastAngle = currentMouseAngle;
         // lastDragTime 업데이트 코드 제거
     }
 
     stopDragging() {
-        this.state.isDragging = false;
+        if (!this.state.isDragging) return;
 
-        // 50ms 검증 없이, 마지막으로 의미 있었던 속도를 즉시 할당하여 관성 준비
+        this.state.isDragging = false;
         this.state.dragVelocity = this.state.lastValidVelocity;
 
         const otherDeck = this.getOtherDeck();
