@@ -13,6 +13,7 @@ class VinylDeck {
             isDragging: false,
             dragVelocity: 0,
             lastValidVelocity: 0,
+            currentSpeed : 1,
             bpm: 120,
             beatOffset: 0,
             beatInterval: 60 / 120,
@@ -175,34 +176,44 @@ class VinylDeck {
 
         if (this.state.isDragging) {
             this.state.isSyncing = false;
+            // 원본 로직: 드래그 중에는 마우스 속도를 그대로 절대 속도로 사용
             effectiveSpeed = this.state.dragVelocity;
         } else {
+            // 원본 로직: 마찰력을 곱해 점진적으로 감속
             this.state.dragVelocity *= this.config.friction;
             if (Math.abs(this.state.dragVelocity) < 0.01) this.state.dragVelocity = 0;
+            
+            // 기본 속도에 관성 가중치를 더하여 원속도로 부드럽게 복귀
             effectiveSpeed = baseSpeed + this.state.dragVelocity;
 
+            // --- 동기화(Sync) 로직 ---
             if (this.state.isSyncing) {
                 const otherDeck = this.getOtherDeck();
                 if (otherDeck && otherDeck.state.isPlaying) {
                     const otherRelPos = (otherDeck.state.currentPosition - otherDeck.state.beatOffset) % otherDeck.state.beatInterval;
                     const myRelPos = (this.state.currentPosition - this.state.beatOffset) % this.state.beatInterval;
+                    
                     let drift = otherRelPos - myRelPos;
                     if (drift > this.state.beatInterval / 2) drift -= this.state.beatInterval;
                     if (drift < -this.state.beatInterval / 2) drift += this.state.beatInterval;
 
-                    if (Math.abs(drift) < 0.005) this.state.isSyncing = false;
-                    else effectiveSpeed += (drift * 0.4);
+                    if (Math.abs(drift) < 0.005) {
+                        this.state.isSyncing = false;
+                    } else {
+                        effectiveSpeed += (drift * 0.4); 
+                    }
                 } else {
                     this.state.isSyncing = false;
                 }
             }
         }
+        
         effectiveSpeed = Math.max(Math.min(effectiveSpeed, this.config.tempo_rate), -this.config.tempo_rate);
 
         const now = this.engine.audioCtx.currentTime;
         const deltaTime = now - this.state.lastUpdateTime;
         this.state.lastUpdateTime = now;
-        
+
         this.state.currentPosition += deltaTime * effectiveSpeed;
         
         const rotationPerSecond = 360 / 1.8;
@@ -217,7 +228,7 @@ class VinylDeck {
             this.engine.stop();
             this.state.currentPosition = Math.max(0, Math.min(this.state.currentPosition, this.engine.audioBuffer.duration));
             this.forceDrawWaveform();
-            return;
+            return; 
         }
 
         const progress = (this.state.currentPosition / this.engine.audioBuffer.duration) * 100;
@@ -243,10 +254,8 @@ class VinylDeck {
         
         this.state.isDragging = true;
         this.state.dragVelocity = 0;
-        this.state.lastValidVelocity = 0; 
-        // performance.now(), lastDragTime 관련 코드 제거
         
-        const rect = this.view.vinyl.getBoundingClientRect(); 
+        const rect = this.view.vinyl.getBoundingClientRect();
         this.centerX = rect.left + rect.width / 2;
         this.centerY = rect.top + rect.height / 2;
         this.lastAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
@@ -261,16 +270,15 @@ class VinylDeck {
         if (delta > 180) delta -= 360;
         else if (delta < -180) delta += 360;
 
+        // 원본과 동일: 현재 움직임만을 속도로 즉시 반영
         this.state.dragVelocity = delta * this.config.lp_sensitivity;
         this.lastAngle = currentMouseAngle;
-        // lastDragTime 업데이트 코드 제거
     }
 
     stopDragging() {
         if (!this.state.isDragging) return;
-
+        
         this.state.isDragging = false;
-        this.state.dragVelocity = this.state.lastValidVelocity;
 
         const otherDeck = this.getOtherDeck();
         const isBothActive = otherDeck && otherDeck.state.isPlaying && this.state.isPlaying;
