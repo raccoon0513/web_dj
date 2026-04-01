@@ -46,8 +46,9 @@ class DeckView {
     }
 
     updateSpeedDisplay(speedVal) {
-        if (this.speedValue) this.speedValue.textContent = speedVal.toFixed(3);
-        if (this.speedSlider) this.speedSlider.value = speedVal;
+        if (this.speedValue) {
+            this.speedValue.textContent = speedVal.toFixed(3);
+        }
     }
 
     updateBPMDisplay(bpm) {
