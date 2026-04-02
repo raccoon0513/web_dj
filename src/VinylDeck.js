@@ -72,6 +72,7 @@ class VinylDeck {
                 if (state.isPlaying) this.playBuffer();
             };
         }
+        
 
         // 슬라이더 조작
         if (view.speedSlider) {
