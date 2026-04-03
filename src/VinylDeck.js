@@ -177,7 +177,7 @@ class VinylDeck {
 
         if (this.state.isDragging) {
             this.state.isSyncing = false;
-            // 원본 로직: 드래그 중에는 마우스 속도를 그대로 절대 속도로 사용
+            // 드래그 중에는 마우스 속도를 그대로 절대 속도로 사용
             effectiveSpeed = this.state.dragVelocity;
         } else {
             // 원본 로직: 마찰력을 곱해 점진적으로 감속
@@ -265,6 +265,7 @@ class VinylDeck {
     drag(e) {
         if (!this.state.isDragging) return;
         
+        //현재 lp판 위 마우스 각도 구하기
         const currentMouseAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
         let delta = currentMouseAngle - this.lastAngle;
         

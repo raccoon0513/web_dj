@@ -35,6 +35,10 @@ class DeckView {
         }
     }
 
+    /**
+    *lp판을 회전시킵니다
+    *@param {float} angle - 도수법
+    */
     renderVinyl(angle) {
         if (this.vinyl) {
             this.vinyl.style.transform = `rotate(${angle % 360}deg)`;
@@ -45,21 +49,40 @@ class DeckView {
         if (this.currentTimeText) this.currentTimeText.textContent = timeStr;
     }
 
+    /**
+     * input.progressSlider 재생속도 바의 값을 컨트롤합니다.
+     * @param {*} speedVal 
+     */
+    
     updateSpeedDisplay(speedVal) {
         if (this.speedValue) {
             this.speedValue.textContent = speedVal.toFixed(3);
         }
     }
-
+    /**
+     * this.bpmDisplay 텍스트 변경
+     * this.bpmInput 변경
+     * @param {*} bpm 
+     */
     updateBPMDisplay(bpm) {
         if (this.bpmDisplay) this.bpmDisplay.textContent = `${bpm} BPM`;
         if (this.bpmInput) this.bpmInput.value = bpm;
     }
 
+    /**
+     * 곡의 진행 바 위치값을 컨트롤합니다.
+     * this.progressSlider 값 변경
+     * @param {*} percent 
+     */
     updateProgress(percent) {
         if (this.progressSlider) this.progressSlider.value = percent;
     }
 
+    /**
+     * barEdit 클릭시 이벤트를 설정합니다.
+     * @param {*} isActive 
+     * @returns 
+     */
     toggleBarEditUI(isActive) {
         if (!this.barEditBtn) return;
         this.barEditBtn.classList.toggle('active', isActive);
