@@ -200,6 +200,7 @@ class VinylDeck {
                     const otherRelPos = (otherDeck.state.currentPosition - otherDeck.state.beatOffset) % otherDeck.state.beatInterval;
                     const myRelPos = (this.state.currentPosition - this.state.beatOffset) % this.state.beatInterval;
                     
+                    //
                     let drift = otherRelPos - myRelPos;
                     if (drift > this.state.beatInterval / 2) drift -= this.state.beatInterval;
                     if (drift < -this.state.beatInterval / 2) drift += this.state.beatInterval;
