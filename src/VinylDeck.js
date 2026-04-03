@@ -11,6 +11,7 @@ class VinylDeck {
             lastUpdateTime: 0,
             currentAngle: 0,
             isDragging: false,
+            isBraking: false,
             dragVelocity: 0,
             lastValidVelocity: 0,
             currentSpeed : 1,
@@ -179,18 +180,25 @@ class VinylDeck {
         if (this.state.isDragging) {
             this.state.isSyncing = false;
             
-            // 마지막 마우스 이동 후 50ms가 초과했다면 완전히 멈춘 것으로 간주
-            if (performance.now() - this.state.lastMouseMoveTime > 50) {
+            // 1. 잡은 직후의 브레이크 관성 처리
+            if (this.state.isBraking) {
+                this.state.dragVelocity *= 0.85; // 제동력
+                if (Math.abs(this.state.dragVelocity) < 0.01) {
+                    this.state.dragVelocity = 0;
+                    this.state.isBraking = false; // 완전히 멈추면 브레이크 해제
+                }
+            } 
+            // 2. 스크래치 조작 중 50ms 이상 마우스 이동이 없으면 정지
+            else if (performance.now() - this.state.lastMouseMoveTime > 50) {
                 this.state.dragVelocity = 0;
             }
-            // 드래그 중에는 마우스 속도를 그대로 절대 속도로 사용
+            
             effectiveSpeed = this.state.dragVelocity;
         } else {
-            // 원본 로직: 마찰력을 곱해 점진적으로 감속
+            // 3. 손을 뗀 후의 마찰력(서서히 원속도로 복귀)
             this.state.dragVelocity *= this.config.friction;
             if (Math.abs(this.state.dragVelocity) < 0.01) this.state.dragVelocity = 0;
             
-            // 기본 속도에 관성 가중치를 더하여 원속도로 부드럽게 복귀
             effectiveSpeed = baseSpeed + this.state.dragVelocity;
 
             // --- 동기화(Sync) 로직 ---
@@ -200,7 +208,6 @@ class VinylDeck {
                     const otherRelPos = (otherDeck.state.currentPosition - otherDeck.state.beatOffset) % otherDeck.state.beatInterval;
                     const myRelPos = (this.state.currentPosition - this.state.beatOffset) % this.state.beatInterval;
                     
-                    //
                     let drift = otherRelPos - myRelPos;
                     if (drift > this.state.beatInterval / 2) drift -= this.state.beatInterval;
                     if (drift < -this.state.beatInterval / 2) drift += this.state.beatInterval;
@@ -216,7 +223,11 @@ class VinylDeck {
             }
         }
         
+        // 최대/최소 속도 제한
         effectiveSpeed = Math.max(Math.min(effectiveSpeed, this.config.tempo_rate), -this.config.tempo_rate);
+        
+        // 🌟 다음 클릭(startDragging) 시 브레이크 시작 속도로 쓰기 위해 현재 속도 저장
+        this.state.currentSpeed = effectiveSpeed; 
 
         const now = this.engine.audioCtx.currentTime;
         const deltaTime = now - this.state.lastUpdateTime;
@@ -227,10 +238,15 @@ class VinylDeck {
         const rotationPerSecond = 360 / 1.8;
         this.state.currentAngle += rotationPerSecond * effectiveSpeed * deltaTime;
         
+        // 오디오 엔진 및 UI 업데이트
         this.engine.setPlaybackRate(effectiveSpeed);
+        // 만약 스크래치 필터(저음 부스트) 로직을 AuidioEngine에 추가하셨다면 아래 주석을 해제하세요.
+        // this.engine.setScratchFilterFrequency(effectiveSpeed); 
+        
         this.view.updateSpeedDisplay(effectiveSpeed);
         this.view.renderVinyl(this.state.currentAngle);
 
+        // 곡의 끝이나 처음을 벗어났을 때의 처리
         if (this.state.currentPosition >= this.engine.audioBuffer.duration || this.state.currentPosition < 0) {
             this.state.isPlaying = false;
             this.engine.stop();
@@ -239,11 +255,13 @@ class VinylDeck {
             return; 
         }
 
+        // 진행 바 및 파형 UI 렌더링
         const progress = (this.state.currentPosition / this.engine.audioBuffer.duration) * 100;
         this.view.updateProgress(progress);
         this.view.updateTime(formatTime(this.state.currentPosition));
         this.forceDrawWaveform();
 
+        // 다음 프레임 호출
         requestAnimationFrame(() => this.updateLoop());
     }
 
@@ -261,8 +279,11 @@ class VinylDeck {
         if (!this.state.isPlaying) return;
         
         this.state.isDragging = true;
-        this.state.dragVelocity = 0;
-        this.state.lastMouseMoveTime = performance.now(); // 드래깅 시작 시간 측정
+        this.state.isBraking = true; // 잡는 순간 브레이크 모드 활성화
+        
+        // 현재 실제로 돌고 있던 속도(currentSpeed)를 이어받아 관성 감속 준비
+        this.state.dragVelocity = this.state.currentSpeed; 
+        this.state.lastMouseMoveTime = performance.now(); 
         
         const rect = this.view.vinyl.getBoundingClientRect();
         this.centerX = rect.left + rect.width / 2;
@@ -272,15 +293,16 @@ class VinylDeck {
 
     drag(e) {
         if (!this.state.isDragging) return;
+
+        // 마우스가 조금이라도 움직이면 브레이크 모드를 즉시 해제하고 스크래치 우선 적용
+        this.state.isBraking = false; 
         
-        //현재 lp판 위 마우스 각도 구하기
         const currentMouseAngle = Math.atan2(e.clientY - this.centerY, e.clientX - this.centerX) * 180 / Math.PI;
         let delta = currentMouseAngle - this.lastAngle;
         
         if (delta > 180) delta -= 360;
         else if (delta < -180) delta += 360;
 
-        // 원본과 동일: 현재 움직임만을 속도로 즉시 반영
         this.state.dragVelocity = delta * this.config.lp_sensitivity;
         this.lastAngle = currentMouseAngle;
         this.state.lastMouseMoveTime = performance.now();
