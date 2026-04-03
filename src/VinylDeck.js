@@ -14,6 +14,7 @@ class VinylDeck {
             dragVelocity: 0,
             lastValidVelocity: 0,
             currentSpeed : 1,
+            lastMouseMoveTime: 0,
             bpm: 120,
             beatOffset: 0,
             beatInterval: 60 / 120,
@@ -177,6 +178,11 @@ class VinylDeck {
 
         if (this.state.isDragging) {
             this.state.isSyncing = false;
+            
+            // 마지막 마우스 이동 후 50ms가 초과했다면 완전히 멈춘 것으로 간주
+            if (performance.now() - this.state.lastMouseMoveTime > 50) {
+                this.state.dragVelocity = 0;
+            }
             // 드래그 중에는 마우스 속도를 그대로 절대 속도로 사용
             effectiveSpeed = this.state.dragVelocity;
         } else {
@@ -255,6 +261,7 @@ class VinylDeck {
         
         this.state.isDragging = true;
         this.state.dragVelocity = 0;
+        this.state.lastMouseMoveTime = performance.now(); // 드래깅 시작 시간 측정
         
         const rect = this.view.vinyl.getBoundingClientRect();
         this.centerX = rect.left + rect.width / 2;
@@ -275,6 +282,7 @@ class VinylDeck {
         // 원본과 동일: 현재 움직임만을 속도로 즉시 반영
         this.state.dragVelocity = delta * this.config.lp_sensitivity;
         this.lastAngle = currentMouseAngle;
+        this.state.lastMouseMoveTime = performance.now();
     }
 
     stopDragging() {
