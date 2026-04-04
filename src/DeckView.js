@@ -124,9 +124,10 @@ class DeckView {
         const startTime = currentPosition - (viewDuration * 0.25);
         const endTime = startTime + viewDuration;
 
-        // 파형 렌더링 (덱별 색상 구분 적용)
+        // 파형 렌더링
         ctx.beginPath();
-        ctx.strokeStyle = this.id === 'deck-a' ? '#00e5ff' : '#ff007b';
+        // ctx.strokeStyle = this.id === 'deck-a' ? '#00e5ff' : '#ff007b';
+        ctx.strokeStyle = '#dadadaaf';
         ctx.lineWidth = 2;
 
         for (let x = 0; x < width; x++) {
@@ -145,8 +146,11 @@ class DeckView {
         // 비트 그리드 렌더링
         if (beatInterval > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.setLineDash([5, 5]);
+            // ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.strokeStyle = 'rgb(238, 0, 0)';
+            // ctx.setLineDash([5, 5]); //점선 사용시
+            ctx.setLineDash([]); //직선
+            
 
             let firstBeatTime = Math.ceil(startTime / beatInterval) * beatInterval + beatOffset;
             while (firstBeatTime > startTime) {

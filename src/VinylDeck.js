@@ -151,6 +151,8 @@ class VinylDeck {
         this.state.bpm = parseFloat(value) || 120;
         this.state.beatInterval = 60 / this.state.bpm;
         this.view.updateBPMDisplay(this.state.bpm);
+
+        this.forceDrawWaveform();//bpm 변경시 wave-viewer 재랜더링
     }
 
     syncWith(otherDeck) {
@@ -208,14 +210,18 @@ class VinylDeck {
                     const otherRelPos = (otherDeck.state.currentPosition - otherDeck.state.beatOffset) % otherDeck.state.beatInterval;
                     const myRelPos = (this.state.currentPosition - this.state.beatOffset) % this.state.beatInterval;
                     
-                    let drift = otherRelPos - myRelPos;
-                    if (drift > this.state.beatInterval / 2) drift -= this.state.beatInterval;
-                    if (drift < -this.state.beatInterval / 2) drift += this.state.beatInterval;
+                    // 1. 내 위치에서 상대방 비트 위치까지 '앞으로' 가야 할 거리(항상 양수)를 계산
+                    let forwardDrift = (otherRelPos - myRelPos + this.state.beatInterval) % this.state.beatInterval;
 
-                    if (Math.abs(drift) < 0.005) {
+                    // 2. 오차가 허용 범위 이내이거나, 한 바퀴를 거의 다 돌아서 위상이 맞춰진 경우 동기화 종료
+                    if (forwardDrift < 0.01 || forwardDrift > this.state.beatInterval - 0.01) {
                         this.state.isSyncing = false;
                     } else {
-                        effectiveSpeed += (drift * 0.4); 
+                        // 3. 원 속도보다 느려지지 않게 무조건 '+' 가속만 적용
+                        // Math.sqrt(제곱근)를 사용하여 남은 거리가 클 때는 가속도가 높고,
+                        // 목표에 가까워질수록 가속도가 0에 부드럽게 수렴하는 형태를 만듭니다.
+                        let boost = Math.sqrt(forwardDrift) * 0.4; // 0.4는 부스트 강도(필요시 조절)
+                        effectiveSpeed += boost; 
                     }
                 } else {
                     this.state.isSyncing = false;
