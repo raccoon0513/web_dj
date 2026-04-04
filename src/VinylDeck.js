@@ -16,7 +16,7 @@ class VinylDeck {
             lastValidVelocity: 0,
             currentSpeed : 1,
             lastMouseMoveTime: 0,
-            bpm: 120,
+            baseBpm: 120,
             beatOffset: 0,
             beatInterval: 60 / 120,
             isBarEditing: false,
@@ -46,6 +46,8 @@ class VinylDeck {
         if (view.playBtn) {
             view.playBtn.onclick = () => {
                 if (!engine.audioBuffer) return;
+                
+                // 역재생 상태에서 플레이를 누르면 정방향으로 복귀
                 if (state.reverse) {
                     state.reverse = false;
                     const currentVal = parseFloat(view.speedSlider.value);
@@ -69,18 +71,26 @@ class VinylDeck {
         if (view.reverseBtn) {
             view.reverseBtn.onclick = () => {
                 if (!engine.audioBuffer) return;
+                
+                // 속도(방향) 반전
                 const nextVal = parseFloat(view.speedSlider.value) * -1;
+                view.speedSlider.value = nextVal;
                 view.updateSpeedDisplay(nextVal);
+                
                 if (state.isPlaying) this.playBuffer();
             };
         }
-        
 
-        // 슬라이더 조작
+        // 🌟 수정됨: 재생 속도 슬라이더 조작 시 현재 재생 속도가 반영된 BPM 텍스트도 함께 업데이트
         if (view.speedSlider) {
-            view.speedSlider.oninput = () => view.updateSpeedDisplay(parseFloat(view.speedSlider.value));
+            view.speedSlider.oninput = () => {
+                const speed = parseFloat(view.speedSlider.value);
+                view.updateSpeedDisplay(speed);
+                view.updateBPMDisplay(this.getCurrentBPM()); 
+            };
         }
 
+        // EQ 및 볼륨 조작
         if (view.volSlider) {
             view.volSlider.oninput = (e) => engine.setGain(parseFloat(e.target.value));
         }
@@ -99,7 +109,7 @@ class VinylDeck {
             window.addEventListener('mouseup', () => this.stopDragging());
         }
 
-        // 멀티덱 전용 이벤트
+        // 멀티덱 전용 이벤트 (마디 편집기)
         if (view.barEditBtn) {
             view.barEditBtn.onclick = () => {
                 state.isBarEditing = !state.isBarEditing;
@@ -121,10 +131,12 @@ class VinylDeck {
             };
         }
 
+        // 🌟 수정됨: BPM 수동 입력 시, 원본 BPM을 바꾸는 대신 handleBPMInput을 호출하여 속도(Speed)를 조절
         if (view.bpmInput) {
-            view.bpmInput.oninput = (e) => this.updateBPM(e.target.value);
+            view.bpmInput.oninput = (e) => this.handleBPMInput(e.target.value);
         }
 
+        // 동기화(Sync) 버튼
         if (view.syncBtn) {
             view.syncBtn.onclick = () => {
                 const otherDeck = this.getOtherDeck();
@@ -137,7 +149,8 @@ class VinylDeck {
         if (!file) return;
 
         const extractedBPM = extractBPMFromFileName(file.name);
-        this.updateBPM(extractedBPM || 120);
+        // updateBPM 대신 setBaseBPM 호출
+        this.setBaseBPM(extractedBPM || 120);
 
         await this.engine.init();
         const arrayBuffer = await file.arrayBuffer();
@@ -147,18 +160,47 @@ class VinylDeck {
         this.playBuffer();
     }
 
-    updateBPM(value) {
-        this.state.bpm = parseFloat(value) || 120;
-        this.state.beatInterval = 60 / this.state.bpm;
-        this.view.updateBPMDisplay(this.state.bpm);
+    // 1. 노래 업로드 시 '최초 1회' 원본 BPM과 마디 간격을 세팅하는 함수
+    setBaseBPM(value) {
+        this.state.baseBpm = parseFloat(value) || 120;
+        this.state.beatInterval = 60 / this.state.baseBpm;
+        
+        // 새 곡이 로드되면 속도 배율을 1.0(원속도)으로 초기화
+        this.view.speedSlider.value = 1;
+        this.view.updateSpeedDisplay(1);
+        this.view.updateBPMDisplay(this.state.baseBpm);
 
-        this.forceDrawWaveform();//bpm 변경시 wave-viewer 재랜더링
+        this.forceDrawWaveform();
     }
 
+    // 2. 현재 재생 속도(Speed)가 반영된 실제 귀에 들리는 BPM을 계산하는 함수
+    getCurrentBPM() {
+        // 역재생(음수) 상태라도 BPM은 양수로 표시
+        const speed = Math.abs(parseFloat(this.view.speedSlider.value));
+        return parseFloat((this.state.baseBpm * speed).toFixed(1)); 
+    }
+
+    // 3. 입력창에 BPM을 쳤을 때, 역으로 재생 속도(Speed Slider)를 조절하는 함수
+    handleBPMInput(value) {
+        const targetBpm = parseFloat(value) || this.state.baseBpm;
+        
+        // 역재생 중이었다면 방향 유지
+        const currentDirection = parseFloat(this.view.speedSlider.value) < 0 ? -1 : 1;
+        
+        // 목표 BPM에 도달하기 위한 필요 속도 배율 계산
+        const newSpeed = (targetBpm / this.state.baseBpm) * currentDirection;
+        
+        this.view.speedSlider.value = newSpeed;
+        this.view.updateSpeedDisplay(newSpeed);
+        this.view.updateBPMDisplay(targetBpm);
+        // 주의: beatInterval을 다시 계산하지 않으므로 파형의 마디 선 간격은 유지됨!
+    }
+
+    // 4. Sync 버튼 클릭 시 상대 데크의 '현재 재생 중인 BPM'을 가져와 내 속도를 맞춤
     syncWith(otherDeck) {
-        if (!otherDeck || !otherDeck.state.bpm) return;
-        this.view.speedSlider.value = otherDeck.state.bpm / this.state.bpm;
-        this.updateBPM(otherDeck.state.bpm);
+        if (!otherDeck || !otherDeck.state.baseBpm) return;
+        const targetBpm = otherDeck.getCurrentBPM();
+        this.handleBPMInput(targetBpm); 
     }
 
     getOtherDeck() {
