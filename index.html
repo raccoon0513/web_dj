@@ -31,12 +31,14 @@
 
                 <div class="control-group">
                     <div class="transport-controls">
-                        <button class="play-btn">▶ PLAY</button>
-                        <button class="stop-btn">■ STOP</button>
-                        <button class="reverse-btn">◀ REV</button>
+                        <button class="play-btn primary-btn" style="width: 20%;">▶ PLAY</button>
+                        <button class="stop-btn primary-btn" style="width: 20%;">⏸ Pause</button>
+                        <button class="stop-btn primary-btn" style="width: 20%;">■ STOP</button>
+                        <button class="reverse-btn primary-btn" style="width: 20%;">◀ REV</button>
                     </div>
                     <label>Speed: <span class="speedValue">1.000</span>x</label>
                     <input type="range" class="speedSlider" min="-2" max="2" step="any" value="1">
+                    <button class="speed-reset-btn primary-btn">1배속으로</button>
                 </div>
 
                 <div class="eq-container">
@@ -83,7 +85,12 @@
             <div class="crossfader">
                 <input type="range" class="crossfader-slider" min="0" max="100" value="50">
             </div>
-
+            
+            <div class="master-controls" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                            <button id="master-play-btn" class="primary-btn">▶ Master Play</button>
+                            <button id="master-pause-btn" class="primary-btn">⏸ Master Pause</button>
+            </div>
+            
         </div>
 
         <div class="deck single-deck" id="deck-b">
@@ -108,12 +115,14 @@
 
                 <div class="control-group">
                     <div class="transport-controls">
-                        <button class="play-btn">▶ PLAY</button>
-                        <button class="stop-btn">■ STOP</button>
-                        <button class="reverse-btn">◀ REV</button>
+                        <button class="play-btn primary-btn" style="width: 20%;">▶ PLAY</button>
+                        <button class="stop-btn primary-btn" style="width: 20%;">⏸ Pause</button>
+                        <button class="stop-btn primary-btn" style="width: 20%;">■ STOP</button>
+                        <button class="reverse-btn primary-btn" style="width: 20%;">◀ REV</button>
                     </div>
                     <label>Speed: <span class="speedValue">1.000</span>x</label>
                     <input type="range" class="speedSlider" min="-2" max="2" step="any" value="1">
+                    <button class="speed-reset-btn primary-btn">1배속으로</button>
                 </div>
 
                 <div class="eq-container">
