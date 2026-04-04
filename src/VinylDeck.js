@@ -175,9 +175,8 @@ class VinylDeck {
 
     // 2. 현재 재생 속도(Speed)가 반영된 실제 귀에 들리는 BPM을 계산하는 함수
     getCurrentBPM() {
-        // 역재생(음수) 상태라도 BPM은 양수로 표시
         const speed = Math.abs(parseFloat(this.view.speedSlider.value));
-        return parseFloat((this.state.baseBpm * speed).toFixed(1)); 
+        return this.state.baseBpm * speed; 
     }
 
     // 3. 입력창에 BPM을 쳤을 때, 역으로 재생 속도(Speed Slider)를 조절하는 함수

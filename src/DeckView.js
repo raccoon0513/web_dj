@@ -65,8 +65,12 @@ class DeckView {
      * @param {*} bpm 
      */
     updateBPMDisplay(bpm) {
-        if (this.bpmDisplay) this.bpmDisplay.textContent = `${bpm} BPM`;
-        if (this.bpmInput) this.bpmInput.value = bpm;
+        // 화면 표출 시에만 소수점 첫째 자리로 가공
+        const displayBpm = parseFloat(bpm).toFixed(1);
+        
+        if (this.bpmDisplay) this.bpmDisplay.textContent = `${displayBpm} BPM`;
+        // input 창 내부의 텍스트도 가공된 값으로 할당
+        if (this.bpmInput) this.bpmInput.value = displayBpm; 
     }
 
     /**
