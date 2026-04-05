@@ -42,16 +42,18 @@ class VinylDeck {
             view.fileInput.onchange = (e) => this.handleFile(e.target.files[0]);
         }
 
-        // 제어 버튼
+        // 제어 버튼: 재생
         if (view.playBtn) {
             view.playBtn.onclick = () => {
                 if (!engine.audioBuffer) return;
                 
-                // 역재생 상태에서 플레이를 누르면 정방향으로 복귀
                 if (state.reverse) {
                     state.reverse = false;
                     const currentVal = parseFloat(view.speedSlider.value);
-                    view.updateSpeedDisplay(currentVal * -1);
+                    if (currentVal < 0) {
+                        view.speedSlider.value = currentVal * -1;
+                        view.updateSpeedDisplay(currentVal * -1);
+                    }
                 }
                 if (!state.isPlaying) {
                     if (state.currentPosition >= engine.audioBuffer.duration) state.currentPosition = 0;
@@ -60,22 +62,40 @@ class VinylDeck {
             };
         }
 
+        // 제어 버튼: 일시정지 (위치 유지)
+        if (view.pauseBtn) {
+            view.pauseBtn.onclick = () => {
+                state.isPlaying = false;
+                engine.stop();
+            };
+        }
+
+        // 제어 버튼: 정지 (위치 초기화)
         if (view.stopBtn) {
             view.stopBtn.onclick = () => {
                 state.isPlaying = false;
                 state.reverse = false;
                 engine.stop();
+                
+                state.currentPosition = 0;
+                state.currentAngle = 0;
+                view.updateProgress(0);
+                view.updateTime('0:00');
+                view.renderVinyl(0);
+                this.forceDrawWaveform();
             };
         }
 
+        // 제어 버튼: 역재생
         if (view.reverseBtn) {
             view.reverseBtn.onclick = () => {
                 if (!engine.audioBuffer) return;
                 
-                // 속도(방향) 반전
                 const nextVal = parseFloat(view.speedSlider.value) * -1;
                 view.speedSlider.value = nextVal;
                 view.updateSpeedDisplay(nextVal);
+                
+                state.reverse = nextVal < 0;
                 
                 if (state.isPlaying) this.playBuffer();
             };
@@ -361,9 +381,13 @@ class VinylDeck {
         this.state.isDragging = false;
 
         const otherDeck = this.getOtherDeck();
+        // 상대 덱이 존재하고, 양쪽 모두 재생 중일 때만 검사
         const isBothActive = otherDeck && otherDeck.state.isPlaying && this.state.isPlaying;
-        const isTempoSynced = Math.abs(this.state.bpm - otherDeck.state.bpm) < 0.1;
+        
+        // 🌟 원인 해결: this.state.bpm 대신 현재 슬라이더 속도가 반영된 실제 BPM 값을 호출하여 비교
+        const isTempoSynced = Math.abs(this.getCurrentBPM() - otherDeck.getCurrentBPM()) < 0.1;
     
+        // 두 곡의 현재 템포가 동일하게 맞춰져 있다면(Sync 상태라면) 위상(마디) 쫓아가기 발동
         if (isBothActive && isTempoSynced) {
             this.state.isSyncing = true; 
         }
