@@ -16,8 +16,10 @@ class DeckView {
         
         // 전송 및 제어 버튼
         this.playBtn = this.container.querySelector('.play-btn');
+        this.pauseBtn = this.container.querySelector('.pause-btn'); // 해당 라인 추가
         this.stopBtn = this.container.querySelector('.stop-btn');
         this.reverseBtn = this.container.querySelector('.reverse-btn');
+        this.speedResetBtn = this.container.querySelector('.speed-reset-btn');
         
         // EQ 슬라이더
         this.volSlider = this.container.querySelector('.vol-slider');
