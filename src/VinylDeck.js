@@ -163,6 +163,32 @@ class VinylDeck {
                 this.syncWith(otherDeck);
             };
         }
+
+        // 진행 바 (Progress) 드래그 컨트롤 연동
+        if (view.progressSlider) {
+            // 1. 드래그 시작 시 오디오 엔진 임시 정지 (노이즈 및 충돌 방지)
+            view.progressSlider.addEventListener('mousedown', () => {
+                if (state.isPlaying) engine.stop(); 
+            });
+
+            // 2. 드래그 중 실시간 재생 위치 연산 및 UI 재렌더링
+            view.progressSlider.addEventListener('input', (e) => {
+                if (!engine.audioBuffer) return;
+                const percent = parseFloat(e.target.value);
+                state.currentPosition = (percent / 100) * engine.audioBuffer.duration;
+                
+                view.updateTime(formatTime(state.currentPosition));
+                this.forceDrawWaveform();
+            });
+
+            // 3. 드래그 종료(마우스 릴리스) 시 이전 재생 상태(isPlaying)에 맞춰 버퍼 재실행
+            view.progressSlider.addEventListener('change', () => {
+                if (!engine.audioBuffer) return;
+                if (state.isPlaying) {
+                    this.playBuffer(); 
+                }
+            });
+        }
     }
 
     async handleFile(file) {
