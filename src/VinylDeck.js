@@ -176,8 +176,18 @@ class VinylDeck {
         const arrayBuffer = await file.arrayBuffer();
         await this.engine.decodeAudio(arrayBuffer);
         
+        // 자동 재생 방지 및 위치 초기화 연산 (작업 2, 5번 적용)
+        this.state.currentPosition = 0;
+        this.state.currentAngle = 0;
+        this.state.isPlaying = false; 
+
+        // UI 요소 초기화
+        this.view.updateProgress(0);
+        this.view.updateTime('0:00');
+        this.view.renderVinyl(0);
         this.forceDrawWaveform();
-        this.playBuffer();
+        
+        // 기존의 자동 재생 함수(this.playBuffer();) 호출 삭제됨
     }
 
     // 1. 노래 업로드 시 '최초 1회' 원본 BPM과 마디 간격을 세팅하는 함수
