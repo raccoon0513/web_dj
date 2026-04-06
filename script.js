@@ -16,4 +16,21 @@ if (crossfader) {
             window.deckB.engine.setGain(value);
         }
     };
+}// script.js 최하단에 추가
+
+const masterPlayBtn = document.getElementById('master-play-btn');
+const masterPauseBtn = document.getElementById('master-pause-btn');
+
+if (masterPlayBtn) {
+    masterPlayBtn.onclick = () => {
+        if (window.deckA && !window.deckA.state.isPlaying) window.deckA.view.playBtn.click();
+        if (window.deckB && !window.deckB.state.isPlaying) window.deckB.view.playBtn.click();
+    };
+}
+
+if (masterPauseBtn) {
+    masterPauseBtn.onclick = () => {
+        if (window.deckA && window.deckA.state.isPlaying) window.deckA.view.pauseBtn.click();
+        if (window.deckB && window.deckB.state.isPlaying) window.deckB.view.pauseBtn.click();
+    };
 }
