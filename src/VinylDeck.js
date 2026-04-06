@@ -101,7 +101,7 @@ class VinylDeck {
             };
         }
 
-        // 🌟 수정됨: 재생 속도 슬라이더 조작 시 현재 재생 속도가 반영된 BPM 텍스트도 함께 업데이트
+        // 수정됨: 재생 속도 슬라이더 조작 시 현재 재생 속도가 반영된 BPM 텍스트도 함께 업데이트
         if (view.speedSlider) {
             view.speedSlider.oninput = () => {
                 const speed = parseFloat(view.speedSlider.value);
